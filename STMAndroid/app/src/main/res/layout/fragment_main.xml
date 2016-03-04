@@ -14,18 +14,24 @@
         android:layout_width="310dp"
         android:layout_height="300dp" />
 
-    <TextView
-        android:text="No Data has been Sent"
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:textSize="30dp"/>
-
     <Button
-        android:text="Start Bluetooth"
+        android:text="Connect To Microscope"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="startBluetooth"
         android:layout_gravity="center_horizontal"/>
+
+    <Button
+        android:text="Start Scan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="startScan"
+        android:layout_gravity="center_horizontal"/>
+
+    <ListView
+        android:id="@+id/list_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+    </ListView>
+
 </LinearLayout>

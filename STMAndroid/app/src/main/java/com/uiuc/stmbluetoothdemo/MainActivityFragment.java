@@ -2,9 +2,13 @@ package com.uiuc.stmbluetoothdemo;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -17,12 +21,17 @@ import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.UUID;
@@ -32,17 +41,22 @@ import java.util.UUID;
  */
 public class MainActivityFragment extends Fragment {
     View v;
-    TextView textView;
     ImageView iv;
+    ListView deviceList;
+    ArrayAdapter<String> deviceListAdapter;
     String received;
     ArrayList<Byte> bufferMain = new ArrayList<Byte>();
     Handler handler;
     Bitmap bm;
+    CommThread thread;
+    static boolean readyToSend = false; //A Flag that shows whether we are ready to send messages or not
     BluetoothAdapter myBluetoothAdapter;
     public static final int ENABLE_BLUETOOTH = 1;
     public static final int MAKE_DISCOVERABLE = 1;
     public static final UUID MY_UUID = UUID.fromString("37407000-8cf0-11bd-b23e-10b75c30d20a");
     public final String SERVICE_NAME = "STM";
+    // Create a BroadcastReceiver for ACTION_FOUND
+    BroadcastReceiver mReceiver;
 
     public MainActivityFragment() {
     }
@@ -51,9 +65,22 @@ public class MainActivityFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.fragment_main, container, false);
-        textView = (TextView) v.findViewById(R.id.textView);
         iv = (ImageView) v.findViewById(R.id.imageView);
-        handler = new Handler() {
+        deviceList = (ListView) v.findViewById(R.id.list_view);
+        deviceListAdapter = new ArrayAdapter<String>(getActivity(),
+                R.layout.list_view);
+        deviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                String t = deviceListAdapter.getItem(position);
+                String lines[] = t.split("\\r?\\n");
+                Toast.makeText(getActivity(), lines[1], Toast.LENGTH_SHORT).show();
+                BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(lines[1]);
+                ConnectThread connectThread = new ConnectThread(device);
+                connectThread.start();
+            }
+        });
+        handler = new Handler() {               //Handler to set the image to be the received bitmap
             @Override
             public void handleMessage(Message msg){
                 iv.setImageBitmap(bm);
@@ -66,18 +93,24 @@ public class MainActivityFragment extends Fragment {
      */
     public void startBluetooth() {
         myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(myBluetoothAdapter == null) {        //Check to see if bluetooth is supported on the device
+        if (myBluetoothAdapter == null) {        //Check to see if bluetooth is supported on the device
             Snackbar.make(v, "Bluetooth is not supported on this device", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
             return;
         }
 
-        if(myBluetoothAdapter.isEnabled()) {   //Turn off and turn on bluetooth
-            myBluetoothAdapter.disable();
+        if (myBluetoothAdapter.isEnabled()) {    //Search for available bluetooth devices, until you find the microscope
+            findDevices();
+        } else {
+            Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBluetooth, ENABLE_BLUETOOTH);
         }
+    }
 
-        Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(enableBluetooth, ENABLE_BLUETOOTH);
+    public void startScan() {
+        if(readyToSend) {
+            thread.write("Start Scan");
+        }
     }
 
     @Override
@@ -87,26 +120,62 @@ public class MainActivityFragment extends Fragment {
             if (resultCode == Activity.RESULT_OK) {
                 Snackbar.make(v, "Bluetooth has been enabled", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                new AcceptConnectionThread().start();
+                findDevices();     //Search for available bluetooth devices, until you find the microscope
             }
         }
     }
 
-    private class ReadThread extends Thread {
+    /*
+    Attempts to discover any Bluetooth Devices that are available, and displays them as a list
+     */
+    public void findDevices() {
+        mReceiver = new BroadcastReceiver() {
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                // When discovery finds a device
+                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    // Get the BluetoothDevice object from the Intent
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    // Add the name and address to an array adapter to show in a ListView
+                    deviceListAdapter.add(device.getName() + "\n" + device.getAddress());
+                    Log.v("Device", device.getName() + "\n" + device.getAddress());
+                    deviceListAdapter.notifyDataSetChanged();
+                    Snackbar.make(v, "Device has been added to list", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
+            }
+        };
+
+        // Register the BroadcastReceiver
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        getActivity().registerReceiver(mReceiver, filter); // Don't forget to unregister during onDestroy
+        myBluetoothAdapter.startDiscovery();
+        Snackbar.make(v, "Discovery has started", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show();
+        deviceListAdapter.clear();      //Clear out all the values that are currently there
+        deviceListAdapter.notifyDataSetChanged();
+        deviceList.setAdapter(deviceListAdapter);
+    }
+
+    private class CommThread extends Thread {
         private BluetoothSocket socket;
         private InputStream inStream;
+        private OutputStream outStream;
 
-        public ReadThread(BluetoothSocket socket) {
+        public CommThread(BluetoothSocket socket) {
             this.socket = socket;
             try {
                 inStream = socket.getInputStream();
                 Log.w("Stream", "Input Stream Set Up");
+                outStream = socket.getOutputStream();
+                Log.w("Stream", "Input Stream Set Up");
+                readyToSend = true; //Enables the sending of messages
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        //Listens on the passed in bluetooth socket for any incoming text, and replaces the text in the textView with the recieved text
+        //Listens on the passed in bluetooth socket for any incoming images, and replaces the image in the imageView with the received image
         public void run() {
             int totalCount = 0;
             byte[] buffer = new byte[4000];
@@ -144,8 +213,71 @@ public class MainActivityFragment extends Fragment {
             }
             try {
                 socket.close();
+                readyToSend = false;
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+        }
+
+        /*
+        Write to the output stream to send commands to the Raspberry Pi
+         */
+        public void write(String command) {
+            try {
+                outStream.write(command.getBytes());
+            } catch (IOException e) {}
+        }
+
+        /** Will cancel the listening socket, and cause the thread to finish */
+        public void cancel() {
+            try {
+                readyToSend = false;
+                socket.close();
+            } catch (IOException e) { }
+        }
+    }
+
+    private class ConnectThread extends Thread {
+        BluetoothSocket socket = null;
+
+        public ConnectThread(BluetoothDevice device) {
+            // Get a BluetoothSocket to connect with the given BluetoothDevice
+            try {
+                Log.v("Try", "Attempting to create bluetooth socket");
+                // MY_UUID is the app's UUID string, also used by the server code
+                socket = device.createRfcommSocketToServiceRecord(MY_UUID);
+                Log.v("Created", "Created");
+            } catch (IOException e) { }
+
+        }
+
+
+        public void run() {
+            // Cancel discovery because it will slow down the connection
+            myBluetoothAdapter.cancelDiscovery();
+            while (true) {
+                try {
+                    // Connect the device through the socket. This will block
+                    // until it succeeds or throws an exception
+                    socket.connect();
+                } catch (IOException connectException) {
+                    // Unable to connect; close the socket and get out
+                    try {
+
+                        socket.close();
+                    } catch (IOException closeException) {
+                    }
+                    return;
+                }
+                // If a connection was created
+                if (socket != null) {
+                    Snackbar.make(v, "Bluetooth connection has been established", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                    Log.w("Socket", "Bluetooth connection has been established");
+                    thread = new CommThread(socket);
+                    thread.start();
+                    break;
+                }
             }
         }
 
@@ -157,55 +289,8 @@ public class MainActivityFragment extends Fragment {
         }
     }
 
-    private class AcceptConnectionThread extends Thread {
-        private BluetoothServerSocket serverSocket = null;
-
-        public AcceptConnectionThread() {
-            serverSocket = null;
-            Intent makeDiscoverable = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            startActivityForResult(makeDiscoverable, MAKE_DISCOVERABLE);
-            try {
-                // NAME is the name of the bluetooth service, which the system will write to a new SDP db entry on the device
-                // UUID is a unique string id that is used to uniquely identify the bluetooth service
-                serverSocket = myBluetoothAdapter.listenUsingRfcommWithServiceRecord(SERVICE_NAME, MY_UUID);
-                Snackbar.make(v, "Server socket has been opened", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-                Log.w("Socket", "Server socket has been opened");
-            } catch (IOException e) {
-
-            }
-        }
-
-        public void run() {
-            BluetoothSocket socket = null;
-            // Keep listening until exception occurs or a socket is returned
-            while (true) {
-                try {
-                    socket = serverSocket.accept();
-                } catch (IOException e) {
-                    break;
-                }
-                // If a connection was accepted
-                if (socket != null) {
-                    Snackbar.make(v, "Bluetooth connection has been established", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    Log.w("Socket", "Bluetooth connection has been established");
-                    try {
-                        serverSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    new ReadThread(socket).start();
-                    break;
-                }
-            }
-        }
-
-        /** Will cancel the listening socket, and cause the thread to finish */
-        public void cancel() {
-            try {
-                serverSocket.close();
-            } catch (IOException e) { }
-        }
+    @Override
+    public void onDestroy() {
+        getActivity().unregisterReceiver(mReceiver);
     }
 }

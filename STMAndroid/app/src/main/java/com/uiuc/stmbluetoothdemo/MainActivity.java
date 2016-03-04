@@ -40,6 +40,14 @@ public class MainActivity extends AppCompatActivity {
         frag.startBluetooth();
     }
 
+    /**
+     * Calls the startScan method in the Fragment
+     * @param v
+     */
+    public void startScan(View v) {
+        frag.startScan();
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
