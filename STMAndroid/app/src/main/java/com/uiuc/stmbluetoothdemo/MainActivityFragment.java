@@ -1,6 +1,7 @@
 package com.uiuc.stmbluetoothdemo;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
@@ -16,6 +17,7 @@ import android.os.Message;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -23,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -41,18 +44,25 @@ import java.util.UUID;
  */
 public class MainActivityFragment extends Fragment {
     View v;
+    Button connectButton;
+    Button resetButton;
+    boolean connected = false;
+    boolean scanning = false;
+    Button scanButton;
     ImageView iv;
     ListView deviceList;
+    Dialog deviceListDialog;
+    boolean dialogOpen = false;
     ArrayAdapter<String> deviceListAdapter;
-    String received;
     ArrayList<Byte> bufferMain = new ArrayList<Byte>();
-    Handler handler;
+    int totalCountRead = 0;
+    Handler imageHandler;
+    Handler buttonHandler;
     Bitmap bm;
     CommThread thread;
     static boolean readyToSend = false; //A Flag that shows whether we are ready to send messages or not
     BluetoothAdapter myBluetoothAdapter;
     public static final int ENABLE_BLUETOOTH = 1;
-    public static final int MAKE_DISCOVERABLE = 1;
     public static final UUID MY_UUID = UUID.fromString("37407000-8cf0-11bd-b23e-10b75c30d20a");
     public final String SERVICE_NAME = "STM";
     // Create a BroadcastReceiver for ACTION_FOUND
@@ -66,25 +76,37 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.fragment_main, container, false);
         iv = (ImageView) v.findViewById(R.id.imageView);
-        deviceList = (ListView) v.findViewById(R.id.list_view);
+        connectButton = (Button) v.findViewById(R.id.connect);
+        scanButton = (Button) v.findViewById(R.id.scan);
+        resetButton = (Button) v.findViewById(R.id.reset);
+        scanButton.setEnabled(false);
         deviceListAdapter = new ArrayAdapter<String>(getActivity(),
                 R.layout.list_view);
-        deviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                String t = deviceListAdapter.getItem(position);
-                String lines[] = t.split("\\r?\\n");
-                Toast.makeText(getActivity(), lines[1], Toast.LENGTH_SHORT).show();
-                BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(lines[1]);
-                ConnectThread connectThread = new ConnectThread(device);
-                connectThread.start();
-            }
-        });
-        handler = new Handler() {               //Handler to set the image to be the received bitmap
+        imageHandler = new Handler() {               //Handler to set the image to be the received bitmap
             @Override
             public void handleMessage(Message msg){
                 iv.setImageBitmap(bm);
             }};
+        buttonHandler = new Handler() {      //Handler to toggle being able to click on any of the buttons
+            @Override
+            public void handleMessage(Message msg) {
+                if(connected) {
+                    connectButton.setText("Microscope Connected");
+                    connectButton.setEnabled(false);
+                    if(scanning) {
+                        scanButton.setEnabled(false);
+                    }
+                    else {
+                        scanButton.setEnabled(true);
+                    }
+                }
+                else {
+                    connectButton.setText("Connect to Microscope");
+                    connectButton.setEnabled(true);
+                    scanButton.setEnabled(false);
+                }
+            }
+        };
         return v;
     }
 
@@ -107,10 +129,50 @@ public class MainActivityFragment extends Fragment {
         }
     }
 
-    public void startScan() {
-        if(readyToSend) {
-            thread.write("Start Scan");
+    public void reset() {
+        if(connected) {
+            scanning = false;
+            iv.setImageBitmap(null);
+            totalCountRead = 0;
+            bufferMain.clear();
+            thread.write("Reset Scan");
+            buttonHandler.sendEmptyMessage(0);
         }
+    }
+
+    public void startScan() {
+        if(connected) {
+            buttonHandler.sendEmptyMessage(0);
+            thread.write("Start Scan");
+            scanning = true;
+        }
+    }
+
+    public void openDevicePicker() {
+        dialogOpen = true;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
+        builder.setTitle("Choose Bluetooth Device");
+
+        deviceList = new ListView(this.getActivity());
+        deviceList.setAdapter(deviceListAdapter);
+        deviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                deviceListDialog.dismiss();
+                dialogOpen = false;
+                String t = deviceListAdapter.getItem(position);
+                String lines[] = t.split("\\r?\\n");
+                Toast.makeText(getActivity(), lines[1], Toast.LENGTH_SHORT).show();
+                deviceListAdapter.clear();
+                deviceListAdapter.notifyDataSetChanged();
+                BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(lines[1]);
+                ConnectThread connectThread = new ConnectThread(device);
+                connectThread.start();
+            }
+        });
+        builder.setView(deviceList);
+        deviceListDialog = builder.create();
+        deviceListDialog.show();
     }
 
     @Override
@@ -136,6 +198,9 @@ public class MainActivityFragment extends Fragment {
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     // Get the BluetoothDevice object from the Intent
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    if(!dialogOpen) {
+                        openDevicePicker();
+                    }
                     // Add the name and address to an array adapter to show in a ListView
                     deviceListAdapter.add(device.getName() + "\n" + device.getAddress());
                     Log.v("Device", device.getName() + "\n" + device.getAddress());
@@ -154,7 +219,6 @@ public class MainActivityFragment extends Fragment {
                 .setAction("Action", null).show();
         deviceListAdapter.clear();      //Clear out all the values that are currently there
         deviceListAdapter.notifyDataSetChanged();
-        deviceList.setAdapter(deviceListAdapter);
     }
 
     private class CommThread extends Thread {
@@ -169,15 +233,14 @@ public class MainActivityFragment extends Fragment {
                 Log.w("Stream", "Input Stream Set Up");
                 outStream = socket.getOutputStream();
                 Log.w("Stream", "Input Stream Set Up");
-                readyToSend = true; //Enables the sending of messages
             } catch (IOException e) {
+                cancel();
                 e.printStackTrace();
             }
         }
 
         //Listens on the passed in bluetooth socket for any incoming images, and replaces the image in the imageView with the received image
         public void run() {
-            int totalCount = 0;
             byte[] buffer = new byte[4000];
 
             // Keep listening to the InputStream until an exception occurs
@@ -185,38 +248,43 @@ public class MainActivityFragment extends Fragment {
                 try {
                     int count = inStream.read(buffer);
                     Log.i("Received", "Received: " + Integer.toString(count));
-                    byte[] resp = new byte[4];
-                    for(int i = 0; i < 4; i ++) {
-                        resp[i] = buffer[i];
+                    byte[] picDoneResp = new byte[4];
+                    byte[] scanDoneResp = new byte[13];
+                    for(int i = 0; i < 13; i ++) {
+                        if (i < 4) {
+                            picDoneResp[i] = buffer[i];
+                        }
+                        scanDoneResp[i] = buffer[i];
                     }
-                    Log.i("Rec", new String(resp));
-                    if(count == 4 && (new String(resp)).equals("Done")) {
+                    Log.i("Rec", new String(picDoneResp));
+                    if(count == 4 && (new String(picDoneResp)).equals("Done")) {
                         Log.i("Image", "Image Received");
-                        byte[] arr = new byte[totalCount];
-                        for(int i = 0; i < totalCount; i ++) {
+                        byte[] arr = new byte[totalCountRead];
+                        for(int i = 0; i < totalCountRead; i ++) {
                             arr[i] = ((Byte) bufferMain.get(i));
                         }
-                        bm = BitmapFactory.decodeByteArray(arr, 0, totalCount);
-                        handler.sendEmptyMessage(0);
-                        totalCount = 0;
+                        bm = BitmapFactory.decodeByteArray(arr, 0, totalCountRead);
+                        imageHandler.sendEmptyMessage(0);
+                        totalCountRead = 0;
                         bufferMain.clear();
+                    }
+                    else if(count == 13 && (new String(scanDoneResp)).equals("Scan Finished")) {
+                        Log.i("Scan Finished", "Scan Finished");
+                        scanning = false;
+                        Snackbar.make(v, "Scan has finished", Snackbar.LENGTH_LONG).setAction("Action", null).show();
                     }
                     else {
                         for(int i = 0; i < count; i ++) {
                             bufferMain.add(buffer[i]);
                         }
-                        totalCount += count;
+                        totalCountRead += count;
                     }
                 } catch (IOException e) {
+                    cancel();
                     break;
                 }
             }
-            try {
-                socket.close();
-                readyToSend = false;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            cancel();
         }
 
         /*
@@ -225,14 +293,19 @@ public class MainActivityFragment extends Fragment {
         public void write(String command) {
             try {
                 outStream.write(command.getBytes());
-            } catch (IOException e) {}
+            } catch (IOException e) {
+                cancel();
+            }
         }
 
         /** Will cancel the listening socket, and cause the thread to finish */
         public void cancel() {
             try {
-                readyToSend = false;
                 socket.close();
+                connected = false;  //Disables the sending of messages, and renables the connect button
+                buttonHandler.sendEmptyMessage(0);
+                Snackbar.make(v, "Connection to microscope has been terminated", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
             } catch (IOException e) { }
         }
     }
@@ -246,7 +319,7 @@ public class MainActivityFragment extends Fragment {
                 Log.v("Try", "Attempting to create bluetooth socket");
                 // MY_UUID is the app's UUID string, also used by the server code
                 socket = device.createRfcommSocketToServiceRecord(MY_UUID);
-                Log.v("Created", "Created");
+                Log.v("Created", "Created Socket");
             } catch (IOException e) { }
 
         }
@@ -276,6 +349,8 @@ public class MainActivityFragment extends Fragment {
                     Log.w("Socket", "Bluetooth connection has been established");
                     thread = new CommThread(socket);
                     thread.start();
+                    connected = true; //Enables the sending of messages, and disables connecting to microscope
+                    buttonHandler.sendEmptyMessage(0);
                     break;
                 }
             }

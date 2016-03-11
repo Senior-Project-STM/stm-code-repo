@@ -48,6 +48,15 @@ public class MainActivity extends AppCompatActivity {
         frag.startScan();
     }
 
+
+    /**
+     * Calls the reset method in the Fragment
+     * @param v
+     */
+    public void reset(View v) {
+        frag.reset();
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
