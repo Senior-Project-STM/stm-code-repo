@@ -7,7 +7,7 @@ import serial
 serv_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)		#Create a bluetooth socket
 uuid = "37407000-8cf0-11bd-b23e-10b75c30d20a"
 
-ser = serial.Serial('/dev/ttyACM0', 9600) #The serial port the arduino is connected on. Change this if needed
+#ser = serial.Serial('/dev/ttyACM0', 9600) #The serial port the arduino is connected on. Change this if needed
 
 print("Creating Bluetooth Server");
 
@@ -30,8 +30,8 @@ def send_pictures():		#This method will send all 11 images in a row, if scanning
 		with open(item, "rb") as image:
 			stuff = image.read()
 			print("Communicating with Arduino")
-			ser.write("Start")			#Send a request to the Arduino
-			response = ser.readline()   #Wait for a response from the Arduino
+			#ser.write("Start")			#Send a request to the Arduino
+			#response = ser.readline()   #Wait for a response from the Arduino
 			print("Sending Image %d" % i)
 			socket.send(stuff)
 			socket.send("Done")

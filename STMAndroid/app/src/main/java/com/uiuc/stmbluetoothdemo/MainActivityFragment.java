@@ -4,12 +4,15 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -19,24 +22,26 @@ import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -48,7 +53,9 @@ public class MainActivityFragment extends Fragment {
     Button resetButton;
     boolean connected = false;
     boolean scanning = false;
+    boolean pictureAvailable = false;
     Button scanButton;
+    Button saveButton;
     ImageView iv;
     ListView deviceList;
     Dialog deviceListDialog;
@@ -79,7 +86,9 @@ public class MainActivityFragment extends Fragment {
         connectButton = (Button) v.findViewById(R.id.connect);
         scanButton = (Button) v.findViewById(R.id.scan);
         resetButton = (Button) v.findViewById(R.id.reset);
+        saveButton = (Button) v.findViewById(R.id.save);
         scanButton.setEnabled(false);
+        saveButton.setEnabled(false);
         deviceListAdapter = new ArrayAdapter<String>(getActivity(),
                 R.layout.list_view);
         imageHandler = new Handler() {               //Handler to set the image to be the received bitmap
@@ -91,19 +100,25 @@ public class MainActivityFragment extends Fragment {
             @Override
             public void handleMessage(Message msg) {
                 if(connected) {
-                    connectButton.setText("Microscope Connected");
-                    connectButton.setEnabled(false);
+                    //connectButton.setText("Microscope Connected");
+                    connectButton.setVisibility(View.GONE);
                     if(scanning) {
-                        scanButton.setEnabled(false);
+                        scanButton.setVisibility(View.GONE);
                     }
                     else {
-                        scanButton.setEnabled(true);
+                        scanButton.setVisibility(View.VISIBLE);
                     }
                 }
                 else {
                     connectButton.setText("Connect to Microscope");
-                    connectButton.setEnabled(true);
-                    scanButton.setEnabled(false);
+                    connectButton.setVisibility(View.VISIBLE);
+                    scanButton.setVisibility(View.GONE);
+                }
+                if(pictureAvailable) {
+                    saveButton.setVisibility(View.VISIBLE);
+                }
+                else{
+                    saveButton.setVisibility(View.GONE);
                 }
             }
         };
@@ -130,13 +145,18 @@ public class MainActivityFragment extends Fragment {
     }
 
     public void reset() {
-        if(connected) {
-            scanning = false;
-            iv.setImageBitmap(null);
-            totalCountRead = 0;
-            bufferMain.clear();
-            thread.write("Reset Scan");
-            buttonHandler.sendEmptyMessage(0);
+        scanning = false;
+        pictureAvailable = false;
+        iv.setImageBitmap(null);
+        totalCountRead = 0;
+        bufferMain.clear();
+        thread.write("Reset Scan");
+        buttonHandler.sendEmptyMessage(0);
+    }
+
+    public void save() {
+        if(pictureAvailable) {
+            openSaveDialog();
         }
     }
 
@@ -146,6 +166,60 @@ public class MainActivityFragment extends Fragment {
             thread.write("Start Scan");
             scanning = true;
         }
+    }
+
+    public String savePicture(String name) {
+        ContextWrapper cw = new ContextWrapper(getActivity());
+        File directory = cw.getDir("imageFolder", Context.MODE_PRIVATE); //Access the internal directory /path/imageFolder
+        File path = new File(directory, name);
+
+        try {
+            FileOutputStream stream = new FileOutputStream(path);
+            bm.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            stream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return path.getAbsolutePath();
+    }
+
+    public void saveToDb(String scanName, String imagePath) {
+        ScanResultDbHelper dbHelper = new ScanResultDbHelper(getActivity());
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        //These are the values you will insert into the database
+        ContentValues values = new ContentValues();
+        values.put(ScanResultContract.FeedEntry.TIME, new Date().getTime());
+        values.put(ScanResultContract.FeedEntry.SCAN_NAME, scanName);
+        values.put(ScanResultContract.FeedEntry.FILE_PATH, imagePath);
+
+        db.insert(ScanResultContract.FeedEntry.TABLE_NAME, "null", values);
+    }
+
+    /*
+    Creates a dialog that allows you to save the results of the current scan, once they are received
+     */
+    public void openSaveDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
+        builder.setTitle("Choose a name for the saved scan");
+        final EditText input = new EditText(getActivity());
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                String path = savePicture(input.getText().toString());
+                saveToDb(input.getText().toString(), path);
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        builder.show();
     }
 
     public void openDevicePicker() {
@@ -264,13 +338,14 @@ public class MainActivityFragment extends Fragment {
                             arr[i] = ((Byte) bufferMain.get(i));
                         }
                         bm = BitmapFactory.decodeByteArray(arr, 0, totalCountRead);
-                        imageHandler.sendEmptyMessage(0);
+                        imageHandler.sendEmptyMessage(0);   //Displays the newly received image
                         totalCountRead = 0;
                         bufferMain.clear();
                     }
                     else if(count == 13 && (new String(scanDoneResp)).equals("Scan Finished")) {
                         Log.i("Scan Finished", "Scan Finished");
                         scanning = false;
+                        pictureAvailable = true;
                         Snackbar.make(v, "Scan has finished", Snackbar.LENGTH_LONG).setAction("Action", null).show();
                     }
                     else {
@@ -279,6 +354,7 @@ public class MainActivityFragment extends Fragment {
                         }
                         totalCountRead += count;
                     }
+                    buttonHandler.sendEmptyMessage(0);
                 } catch (IOException e) {
                     cancel();
                     break;

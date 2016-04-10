@@ -13,7 +13,7 @@
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="400dp"
-        android:layout_height="400dp"
+        android:layout_height="350dp"
         android:layout_gravity="center_horizontal"/>
 
     <Button
@@ -38,6 +38,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="reset"
+        android:layout_gravity="center_horizontal"/>
+
+    <Button
+        android:id="@+id/save"
+        android:text="Save Results"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="save"
         android:layout_gravity="center_horizontal"/>
 
 

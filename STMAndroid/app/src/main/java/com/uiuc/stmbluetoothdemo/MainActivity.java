@@ -8,7 +8,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
-    MainActivityFragment frag;
+    MainActivityFragment mainFrag;
+    SavedListFragment savedFrag;
+    DetailedSavedScanFragment detailFrag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,10 +19,10 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        frag = new MainActivityFragment();
+        mainFrag = new MainActivityFragment();
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, frag, "main")
+                    .add(R.id.container, mainFrag, "main")
                     .commit();
         };
     }
@@ -37,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
      * @param v
      */
     public void startBluetooth(View v) {
-        frag.startBluetooth();
+        mainFrag.startBluetooth();
     }
 
     /**
@@ -45,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
      * @param v
      */
     public void startScan(View v) {
-        frag.startScan();
+        mainFrag.startScan();
     }
 
 
@@ -54,7 +56,27 @@ public class MainActivity extends AppCompatActivity {
      * @param v
      */
     public void reset(View v) {
-        frag.reset();
+        mainFrag.reset();
+    }
+
+    /**
+     * Calls the save method in the Fragment
+     * @param v
+     */
+    public void save(View v) {
+        mainFrag.save();
+    }
+
+    public void openDetailedSavedScanFragment(String name, String date, String file_path) {
+        detailFrag = new DetailedSavedScanFragment();
+        Bundle args = new Bundle();
+        args.putString("name", name);
+        args.putString("date", date);
+        args.putString("file_path", file_path);
+        detailFrag.setArguments(args);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, detailFrag, "detailed").addToBackStack(null)
+                .commit();
     }
 
     @Override
@@ -67,6 +89,11 @@ public class MainActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }else if(id == R.id.action_saved) {
+            savedFrag = new SavedListFragment();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.container, savedFrag, "saved").addToBackStack(null)
+                    .commit();
         }
 
         return super.onOptionsItemSelected(item);
