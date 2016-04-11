@@ -3,6 +3,7 @@ import time
 import random
 import threading
 import serial
+import select
 
 serv_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)		#Create a bluetooth socket
 uuid = "37407000-8cf0-11bd-b23e-10b75c30d20a"
@@ -33,15 +34,18 @@ def send_pictures():		#This method will send all 11 images in a row, if scanning
 			#ser.write("Start")			#Send a request to the Arduino
 			#response = ser.readline()   #Wait for a response from the Arduino
 			print("Sending Image %d" % i)
-			socket.send(stuff)
-			socket.send("Done")
+			for j in range(5):
+				socket.send(stuff)
+				socket.send("Done")
+				time.sleep(1)
 			i += 1
 		if i == 11:
-			socket.send("Scan Finished")
+			for j in range(3):
+				socket.send("Scan Finished")
 			i = 0
 			sending = False
 		else:
-			threading.Timer(8.0, send_pictures).start()
+			threading.Timer(7.0, send_pictures).start()
 
 while(True):		#This waits and reads for incoming commands.
 	command = socket.recv(100)

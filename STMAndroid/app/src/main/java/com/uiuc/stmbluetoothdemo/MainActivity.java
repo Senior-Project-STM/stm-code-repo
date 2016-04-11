@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
         args.putString("file_path", file_path);
         detailFrag.setArguments(args);
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.container, detailFrag, "detailed").addToBackStack(null)
+                .replace(R.id.container, detailFrag, "detailed").addToBackStack("detailed")
                 .commit();
     }
 
@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         }else if(id == R.id.action_saved) {
             savedFrag = new SavedListFragment();
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, savedFrag, "saved").addToBackStack(null)
+                    .replace(R.id.container, savedFrag, "saved").addToBackStack("saved")
                     .commit();
         }
 

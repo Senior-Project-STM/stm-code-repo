@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -87,8 +88,6 @@ public class MainActivityFragment extends Fragment {
         scanButton = (Button) v.findViewById(R.id.scan);
         resetButton = (Button) v.findViewById(R.id.reset);
         saveButton = (Button) v.findViewById(R.id.save);
-        scanButton.setEnabled(false);
-        saveButton.setEnabled(false);
         deviceListAdapter = new ArrayAdapter<String>(getActivity(),
                 R.layout.list_view);
         imageHandler = new Handler() {               //Handler to set the image to be the received bitmap
@@ -117,11 +116,12 @@ public class MainActivityFragment extends Fragment {
                 if(pictureAvailable) {
                     saveButton.setVisibility(View.VISIBLE);
                 }
-                else{
-                    saveButton.setVisibility(View.GONE);
-                }
+                //else{
+                //    saveButton.setVisibility(View.GONE);
+                //}
             }
         };
+        buttonHandler.sendEmptyMessage(0);
         return v;
     }
 
@@ -155,9 +155,9 @@ public class MainActivityFragment extends Fragment {
     }
 
     public void save() {
-        if(pictureAvailable) {
+        //if(pictureAvailable) {
             openSaveDialog();
-        }
+        //}
     }
 
     public void startScan() {
@@ -171,16 +171,21 @@ public class MainActivityFragment extends Fragment {
     public String savePicture(String name) {
         ContextWrapper cw = new ContextWrapper(getActivity());
         File directory = cw.getDir("imageFolder", Context.MODE_PRIVATE); //Access the internal directory /path/imageFolder
-        File path = new File(directory, name);
-
+        File path = new File(directory, name + ".jpg");
+        FileOutputStream stream = null;
         try {
-            FileOutputStream stream = new FileOutputStream(path);
+            stream = new FileOutputStream(path);
             bm.compress(Bitmap.CompressFormat.PNG, 100, stream);
-            stream.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return path.getAbsolutePath();
     }
@@ -196,6 +201,7 @@ public class MainActivityFragment extends Fragment {
         values.put(ScanResultContract.FeedEntry.FILE_PATH, imagePath);
 
         db.insert(ScanResultContract.FeedEntry.TABLE_NAME, "null", values);
+        Log.v("Inserted", scanName + imagePath);
     }
 
     /*
@@ -210,6 +216,7 @@ public class MainActivityFragment extends Fragment {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 String path = savePicture(input.getText().toString());
+                Log.v("Path", path);
                 saveToDb(input.getText().toString(), path);
             }
         });
@@ -229,6 +236,14 @@ public class MainActivityFragment extends Fragment {
 
         deviceList = new ListView(this.getActivity());
         deviceList.setAdapter(deviceListAdapter);
+
+        //Get all of the already bonded devices and add them to the list of devices to connect to
+        Set<BluetoothDevice> devices = myBluetoothAdapter.getBondedDevices();
+        if(devices != null) {
+            for (BluetoothDevice device : devices) {
+                deviceListAdapter.add(device.getName() + "\n" + device.getAddress());
+            }
+        }
         deviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
@@ -295,6 +310,9 @@ public class MainActivityFragment extends Fragment {
         deviceListAdapter.notifyDataSetChanged();
     }
 
+    /**
+     * This class is used for communicating over bluetooth, once the connect thread sets up a connection. There are two threads, a read thread, and a write thread.
+     */
     private class CommThread extends Thread {
         private BluetoothSocket socket;
         private InputStream inStream;
@@ -321,7 +339,6 @@ public class MainActivityFragment extends Fragment {
             while (true) {
                 try {
                     int count = inStream.read(buffer);
-                    Log.i("Received", "Received: " + Integer.toString(count));
                     byte[] picDoneResp = new byte[4];
                     byte[] scanDoneResp = new byte[13];
                     for(int i = 0; i < 13; i ++) {
@@ -330,9 +347,9 @@ public class MainActivityFragment extends Fragment {
                         }
                         scanDoneResp[i] = buffer[i];
                     }
-                    Log.i("Rec", new String(picDoneResp));
                     if(count == 4 && (new String(picDoneResp)).equals("Done")) {
                         Log.i("Image", "Image Received");
+                        write("Received");  //Acknowledge that the image has been received.
                         byte[] arr = new byte[totalCountRead];
                         for(int i = 0; i < totalCountRead; i ++) {
                             arr[i] = ((Byte) bufferMain.get(i));
@@ -342,7 +359,7 @@ public class MainActivityFragment extends Fragment {
                         totalCountRead = 0;
                         bufferMain.clear();
                     }
-                    else if(count == 13 && (new String(scanDoneResp)).equals("Scan Finished")) {
+                    else if(count == 13 && (new String(scanDoneResp)).equals("Scan Finished")) {        //If the scan has finished
                         Log.i("Scan Finished", "Scan Finished");
                         scanning = false;
                         pictureAvailable = true;
@@ -367,6 +384,7 @@ public class MainActivityFragment extends Fragment {
         Write to the output stream to send commands to the Raspberry Pi
          */
         public void write(String command) {
+            Log.i("Sending Message", command);
             try {
                 outStream.write(command.getBytes());
             } catch (IOException e) {
@@ -386,6 +404,9 @@ public class MainActivityFragment extends Fragment {
         }
     }
 
+    /**
+     * This thread sets up the connection to the server, and then hands of the final socket to the Comm thread.
+     */
     private class ConnectThread extends Thread {
         BluetoothSocket socket = null;
 

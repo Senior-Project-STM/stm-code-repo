@@ -29,7 +29,7 @@ public class SavedListFragment extends Fragment {
         adapter.setOnItemClickListener(new SavedListAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(String name, String time, String file_path) {
-
+                ((MainActivity) getActivity()).openDetailedSavedScanFragment(name, time, file_path);
             }
         });
 

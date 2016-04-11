@@ -43,6 +43,7 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
             Snackbar.make(v, "Clicked on " + text, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
             if (itemClickListener != null) {
+                getItem(this.getPosition());
                 String nameDb = cursor.getString(0);
                 String timeDb = cursor.getString(1);
                 String pathDb = cursor.getString(2);

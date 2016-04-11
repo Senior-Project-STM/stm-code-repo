@@ -16,10 +16,10 @@ public class ScanResultDbHelper extends SQLiteOpenHelper {
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
     private static final String SQL_CREATE_ENTRIES =
-            "CREATE TABLE " + ScanResultContract.FeedEntry.TABLE_NAME + " (" +
+            "CREATE TABLE " + ScanResultContract.FeedEntry.TABLE_NAME + "(" +
                     ScanResultContract.FeedEntry.TIME + " INTEGER PRIMARY KEY," +
-                    ScanResultContract.FeedEntry.SCAN_NAME + TEXT_TYPE +
-                    ScanResultContract.FeedEntry.FILE_PATH + TEXT_TYPE + COMMA_SEP + " )";
+                    ScanResultContract.FeedEntry.SCAN_NAME + TEXT_TYPE + COMMA_SEP +
+                    ScanResultContract.FeedEntry.FILE_PATH + TEXT_TYPE + ");";
 
     private static final String SQL_DELETE_ENTRIES =
             "DROP TABLE IF EXISTS " + ScanResultContract.FeedEntry.TABLE_NAME;
