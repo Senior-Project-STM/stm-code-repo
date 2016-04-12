@@ -4,11 +4,17 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.view.ActionMode;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+
+import com.bignerdranch.android.multiselector.ModalMultiSelectorCallback;
+import com.bignerdranch.android.multiselector.MultiSelector;
 
 /**
  * Created by chrx on 4/4/16.
@@ -19,6 +25,39 @@ public class SavedListFragment extends Fragment {
     ScanResultDbHelper dbHelper;
     View myView;
     RecyclerView myRecyclerView;
+
+    private MultiSelector mSelector = new MultiSelector();      //Allows you to select multiple entries, and delete them
+    private ModalMultiSelectorCallback deleteMode = new ModalMultiSelectorCallback(mSelector) {
+
+        @Override
+        public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
+            super.onCreateActionMode(actionMode, menu);
+            getActivity().getMenuInflater().inflate(R.menu.delete_menu, menu);
+            return true;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+            if (menuItem.getItemId()==  R.id.menu_item_delete_scan){
+                // Need to finish the action mode before doing the following,
+                // not after. No idea why, but it crashes.
+                actionMode.finish();
+                Cursor cursor = adapter.getCursor();
+                for (int i = 0; i < adapter.getItemCount(); i++) {
+                    if (mSelector.isSelected(i, 0)) {
+                        adapter.getItem(i);
+                        
+                        Crime crime = mCrimes.get(i);
+                        CrimeLab.get(getActivity()).deleteCrime(crime);
+                        mRecyclerView.getAdapter().notifyItemRemoved(i);
+                    }
+                }
+                mSelector.clearSelections();
+                return true;
+            }
+            return false;
+        }
+    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -52,11 +91,11 @@ public class SavedListFragment extends Fragment {
 
         String[] projection = {
                 ScanResultContract.FeedEntry.SCAN_NAME,
-                "strftime('%m-%d-%Y', " + ScanResultContract.FeedEntry.TIME+ ", 'unixepoch')",
+                ScanResultContract.FeedEntry.TIME,
                 ScanResultContract.FeedEntry.FILE_PATH
         };
 
-        String sortOrder = "strftime('%m-%d-%Y', " + ScanResultContract.FeedEntry.TIME+ ", 'unixepoch') desc";
+        String sortOrder = ScanResultContract.FeedEntry.TIME + " desc";
 
         Cursor cursor = db.query(ScanResultContract.FeedEntry.TABLE_NAME, //Table Name
                 projection,  //The columns

@@ -9,6 +9,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by chrx on 4/7/16.
  */
@@ -45,9 +49,9 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
             if (itemClickListener != null) {
                 getItem(this.getPosition());
                 String nameDb = cursor.getString(0);
-                String timeDb = cursor.getString(1);
+                Long timeDb = Long.parseLong(cursor.getString(1));
                 String pathDb = cursor.getString(2);
-                itemClickListener.onItemClick(nameDb, timeDb, pathDb);
+                itemClickListener.onItemClick(nameDb, DateFormat.getDateTimeInstance().format(timeDb), pathDb);
             }
         }
     }
@@ -55,6 +59,14 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
     //Constructor. It accepts a database cursor which access all of the saved scans.
     public SavedListAdapter(Cursor cursor) {
         this.cursor = cursor;
+    }
+
+    /**
+     * Allows outside class to access the cursor
+     * @return
+     */
+    public Cursor getCursor() {
+        return this.cursor;
     }
 
     //Create new views (invoked by the layout manager)
@@ -88,10 +100,10 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
         getItem(position);
 
         String nameDb = cursor.getString(0);
-        String timeDb = cursor.getString(1);
+        Long timeDb = Long.parseLong(cursor.getString(1));
 
         name.setText(nameDb);
-        date.setText(timeDb);
+        date.setText(DateFormat.getDateTimeInstance().format(timeDb));
     }
 
     // Return the size of your dataset (invoked by the layout manager)

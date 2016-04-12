@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">STMBluetoothDemo</string>
+    <string name="app_name">Scanning Tunneling Microscope</string>
     <string name="action_settings">Settings</string>
     <string name="action_saved">Saved Results</string>
 </resources>

@@ -84,6 +84,7 @@ public class MainActivityFragment extends Fragment {
                              Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.fragment_main, container, false);
         iv = (ImageView) v.findViewById(R.id.imageView);
+        iv.setImageBitmap(bm);
         connectButton = (Button) v.findViewById(R.id.connect);
         scanButton = (Button) v.findViewById(R.id.scan);
         resetButton = (Button) v.findViewById(R.id.reset);
@@ -116,9 +117,9 @@ public class MainActivityFragment extends Fragment {
                 if(pictureAvailable) {
                     saveButton.setVisibility(View.VISIBLE);
                 }
-                //else{
-                //    saveButton.setVisibility(View.GONE);
-                //}
+                else{
+                    saveButton.setVisibility(View.GONE);
+                }
             }
         };
         buttonHandler.sendEmptyMessage(0);
@@ -155,9 +156,9 @@ public class MainActivityFragment extends Fragment {
     }
 
     public void save() {
-        //if(pictureAvailable) {
+        if(pictureAvailable) {
             openSaveDialog();
-        //}
+        }
     }
 
     public void startScan() {
@@ -196,7 +197,7 @@ public class MainActivityFragment extends Fragment {
 
         //These are the values you will insert into the database
         ContentValues values = new ContentValues();
-        values.put(ScanResultContract.FeedEntry.TIME, new Date().getTime());
+        values.put(ScanResultContract.FeedEntry.TIME, System.currentTimeMillis());
         values.put(ScanResultContract.FeedEntry.SCAN_NAME, scanName);
         values.put(ScanResultContract.FeedEntry.FILE_PATH, imagePath);
 
@@ -287,12 +288,9 @@ public class MainActivityFragment extends Fragment {
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     // Get the BluetoothDevice object from the Intent
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    if(!dialogOpen) {
-                        openDevicePicker();
-                    }
                     // Add the name and address to an array adapter to show in a ListView
                     deviceListAdapter.add(device.getName() + "\n" + device.getAddress());
-                    Log.v("Device", device.getName() + "\n" + device.getAddress());
+                    Log.d("Device", device.getName() + "\n" + device.getAddress());
                     deviceListAdapter.notifyDataSetChanged();
                     Snackbar.make(v, "Device has been added to list", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
@@ -308,6 +306,9 @@ public class MainActivityFragment extends Fragment {
                 .setAction("Action", null).show();
         deviceListAdapter.clear();      //Clear out all the values that are currently there
         deviceListAdapter.notifyDataSetChanged();
+        if(!dialogOpen) {
+            openDevicePicker();
+        }
     }
 
     /**
@@ -463,6 +464,7 @@ public class MainActivityFragment extends Fragment {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
         getActivity().unregisterReceiver(mReceiver);
     }
 }
