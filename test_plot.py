@@ -35,6 +35,7 @@ def get_data():
 				time.sleep(1)
 
 def get_random_data():
+	#doesn't look like anything - like static
 	global v_array
 	print 'start getting random'
 
@@ -43,7 +44,7 @@ def get_random_data():
 	time.sleep(1)
 	for i in range(1,400):
 		row = np.random.uniform(-2.24e-12, 2.75e-10, size=(1,400))
-		v_array = np.append(v_array, row)
+		v_array = np.concatenate((v_array, row))
 		print np.shape(v_array)
 		time.sleep(1)
 
