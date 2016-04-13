@@ -1,0 +1,90 @@
+.stmBtn{
+	width: 100%;
+	margin-bottom: 20px;
+	margin-top: 20px;
+	height: 50px;
+}
+.im{
+
+}
+.stmBtn2{
+	float: left;
+	width: 48%;
+	height: 50px;
+	margin: 10 5 10 5px;
+}
+.arrow{
+
+	font-size: 30px;
+}
+#up{
+	margin-left: 30px;
+}
+#down{
+	margin-left: 30px;
+}
+#left{
+	margin-right: 15px;
+}
+#right{
+	margin-left: 15px;
+}
+#arrowKeys{
+	padding: 25px;
+	float:left;
+	width: 50%;
+}
+#minimap{
+
+	float: right;
+	background-color: black;
+}
+#leftPanel{
+
+	float: left;
+	width: 48%;
+	margin: 10 5 10 5px;
+
+}
+.title{
+	height: 50px;
+	margin-bottom: 20px;
+}
+#rightPanel{
+
+	float: left;
+	width: 48%;
+	margin: 10 5 10 5px;
+
+}
+
+.textf{
+	margin-top: 0;
+	margin-bottom: 0;
+	height: 50px;
+}
+
+.mainFrame{
+
+	width: 50%;
+	height: 100%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#startDisplay{
+
+	padding-left: auto;
+	padding-right: auto;
+	font-size: 7em;
+}
+#topPanel{
+	border: black 1px solid;
+	height: 50%;
+	overflow: scroll;
+
+}
+#scanDisplay{
+
+
+}
