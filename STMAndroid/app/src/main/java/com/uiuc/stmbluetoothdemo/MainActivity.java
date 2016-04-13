@@ -11,12 +11,13 @@ public class MainActivity extends AppCompatActivity {
     MainActivityFragment mainFrag;
     SavedListFragment savedFrag;
     DetailedSavedScanFragment detailFrag;
+    Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         mainFrag = new MainActivityFragment();
@@ -96,5 +97,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Use this to set the title, to show whether we are connected to or disconnected to a microscope
+     * @param title
+     */
+    public void setTitle(String title) {
+        toolbar.setTitle(title);
     }
 }

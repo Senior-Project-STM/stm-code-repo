@@ -26,7 +26,7 @@ import java.util.Date;
 /**
  * Created by chrx on 4/7/16.
  */
-public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.ViewHolder> {
+public class SavedListAdapter2 extends CursorRecyclerAdapter<SavedListAdapter2.ViewHolder> {
     private Cursor cursor;
     OnItemClickListener itemClickListener;
     MultiSelector mSelector;
@@ -82,35 +82,15 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
         }
     }
 
-    /**
-     * Change the cursor to a new cursor. If there is an existing cursor it will be
-     * closed.
-     *
-     * @param cursor The new cursor to be used
-     */
-    public void changeCursor(Cursor cursor) {
-        Cursor old = this.cursor;
-        this.cursor = cursor;
-        if (old != null) {
-            old.close();
-        }
-    }
-
     //Constructor. It accepts a database cursor which access all of the saved scans.
-    public SavedListAdapter(Activity act, Cursor cursor, MultiSelector mSelector, ModalMultiSelectorCallback deleteMode) {
+    public SavedListAdapter2(Activity act, Cursor cursor, MultiSelector mSelector, ModalMultiSelectorCallback deleteMode) {
+        super(cursor);
         this.cursor = cursor;
         this.mSelector = mSelector;
         this.deleteMode = deleteMode;
         this.act = act;
     }
 
-    /**
-     * Allows outside class to access the cursor
-     * @return
-     */
-    public Cursor getCursor() {
-        return this.cursor;
-    }
 
     //Create new views (invoked by the layout manager)
     @Override
@@ -121,9 +101,9 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
     }
 
     /**
-    * Accesses te db and moves the cursor to the given position
-    * @param position The position that is being accessed
-    * @return
+     * Accesses te db and moves the cursor to the given position
+     * @param position The position that is being accessed
+     * @return
      */
     public void getItem(final int position) {
         if (this.cursor != null && !this.cursor.isClosed()) {
@@ -133,15 +113,13 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
 
     // Replace the contents of a view (invoked by the layout manager)
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolderCursor(ViewHolder holder, Cursor c) {
         View v = holder.myCardView;
-
 
         TextView name = (TextView) v.findViewById(R.id.name);
         TextView date = (TextView) v.findViewById(R.id.date);
         ImageView imageView = (ImageView) v.findViewById(R.id.image_thumbnail);
 
-        getItem(position);
 
         String nameDb = cursor.getString(0);
         Long timeDb = Long.parseLong(cursor.getString(1));

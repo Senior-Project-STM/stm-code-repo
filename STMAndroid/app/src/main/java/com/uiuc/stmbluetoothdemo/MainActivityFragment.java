@@ -75,6 +75,7 @@ public class MainActivityFragment extends Fragment {
     int totalCountRead = 0;
     Handler imageHandler;
     Handler buttonHandler;
+    Handler titleHandler;
     Bitmap bm;
     String connectedTo = "";
     CommThread thread;
@@ -101,6 +102,14 @@ public class MainActivityFragment extends Fragment {
         saveButton = (Button) v.findViewById(R.id.save);
         deviceListAdapter = new ArrayAdapter<String>(getActivity(),
                 R.layout.list_view);
+        titleHandler = new Handler() {                  //Handler to set the title to be displayed
+            public void handleMessage(Message msg) {
+                if (!connected) {
+                    ((MainActivity) getActivity()).setTitle("Disconnected");
+                } else {
+                    ((MainActivity) getActivity()).setTitle("Connected To: " + connectedTo);
+                }
+            }};
         imageHandler = new Handler() {               //Handler to set the image to be the received bitmap
             @Override
             public void handleMessage(Message msg){
@@ -133,6 +142,7 @@ public class MainActivityFragment extends Fragment {
             }
         };
         buttonHandler.sendEmptyMessage(0);
+        titleHandler.sendEmptyMessage(0);
         return v;
     }
 
@@ -223,21 +233,21 @@ public class MainActivityFragment extends Fragment {
      */
     public void openSaveDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
-        builder.setTitle("Choose a name for the saved scan");
+        builder.setTitle("Choose a name for the saved scan:");
         final EditText scanName = new EditText(this.getActivity());
         scanName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         final EditText extra_notes = new EditText(this.getActivity());
         extra_notes.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-        final TextView name = new TextView(getActivity());
-        name.setText("Set Name:");
         final TextView notes = new TextView(getActivity());
-        name.setText("Any Other Notes:");
+        notes.setText("Any Other Notes:");
         LinearLayout l = new LinearLayout(this.getActivity());
         l.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         params.setMargins(4, 4, 4, 4);
         l.setLayoutParams(params);
-        l.addView(name);
+        scanName.setLayoutParams(params);
+        extra_notes.setLayoutParams(params);
+        notes.setLayoutParams(params);
         l.addView(scanName);
         l.addView(notes);
         l.addView(extra_notes);
@@ -443,6 +453,7 @@ public class MainActivityFragment extends Fragment {
                 connected = false;  //Disables the sending of messages, and renables the connect button
                 connectedTo = "";
                 buttonHandler.sendEmptyMessage(0);
+                titleHandler.sendEmptyMessage(0);
                 Snackbar.make(v, "Connection to microscope has been terminated", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             } catch (IOException e) { }
@@ -493,6 +504,7 @@ public class MainActivityFragment extends Fragment {
                     Log.w("Socket", "Bluetooth connection has been established");
                     thread = new CommThread(socket);
                     connectedTo = device_name;
+                    titleHandler.sendEmptyMessage(0);
                     thread.start();
                     connected = true; //Enables the sending of messages, and disables connecting to microscope
                     buttonHandler.sendEmptyMessage(0);

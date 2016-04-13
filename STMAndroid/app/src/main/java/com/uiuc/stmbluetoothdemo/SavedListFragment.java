@@ -4,15 +4,19 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.view.ActionMode;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FilterQueryProvider;
 
 import com.bignerdranch.android.multiselector.ModalMultiSelectorCallback;
 import com.bignerdranch.android.multiselector.MultiSelector;
@@ -20,7 +24,7 @@ import com.bignerdranch.android.multiselector.MultiSelector;
 /**
  * Created by chrx on 4/4/16.
  */
-public class SavedListFragment extends Fragment {
+public class SavedListFragment extends Fragment implements SearchView.OnQueryTextListener{
     SavedListAdapter adapter;
     SQLiteDatabase db;
     SQLiteDatabase writeDB;
@@ -52,7 +56,7 @@ public class SavedListFragment extends Fragment {
                         Long timeDb = Long.parseLong(cursor.getString(1));
                         Log.v("Time", Long.toString(timeDb));
                         deleteScan(timeDb);
-                        cursor = getCursor(); //Rerun the database query so that any deleted items are removed
+                        adapter.changeCursor(getCursor("")); //Rerun the database query so that any deleted items are removed
                         adapter.notifyItemRemoved(i);
                     }
                 }
@@ -70,10 +74,41 @@ public class SavedListFragment extends Fragment {
     }
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        dbHelper = new ScanResultDbHelper(getActivity());
+        db = dbHelper.getReadableDatabase();
+        writeDB = dbHelper.getWritableDatabase();
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_saved_list, menu);
+
+        final MenuItem item = menu.findItem(R.id.action_search);
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(item);
+        searchView.setOnQueryTextListener(this);
+
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        adapter.changeCursor(getCursor(newText));
+        adapter.notifyDataSetChanged();
+        return true;
+    }
+
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        return false;
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         myView = inflater.inflate(R.layout.fragment_saved, container, false);
-        Cursor cursor = getCursor();
+        Cursor cursor = getCursor("");
         adapter = new SavedListAdapter(getActivity(), cursor, mSelector, deleteMode);
         adapter.setOnItemClickListener(new SavedListAdapter.OnItemClickListener() {
             @Override
@@ -92,14 +127,11 @@ public class SavedListFragment extends Fragment {
     }
 
     /**
-     * Creates a cursor which accesses the saved scans from the database
+     * Creates a cursor which accesses the saved scans from the database. Will also use the constraint if needed
      * @return
      */
-    public Cursor getCursor() {
-        dbHelper = new ScanResultDbHelper(getActivity());
-        db = dbHelper.getReadableDatabase();
-        writeDB = dbHelper.getWritableDatabase();
-
+    public Cursor getCursor(String constraint) {
+        Log.e("Constraint", constraint);
         String[] projection = {
                 ScanResultContract.FeedEntry.SCAN_NAME,
                 ScanResultContract.FeedEntry.TIME,
@@ -107,12 +139,14 @@ public class SavedListFragment extends Fragment {
                 ScanResultContract.FeedEntry.EXTRA_NOTES
         };
 
+        String[] selectionArgs = {constraint};
+
         String sortOrder = ScanResultContract.FeedEntry.TIME + " desc";
 
         Cursor cursor = db.query(ScanResultContract.FeedEntry.TABLE_NAME, //Table Name
                 projection,  //The columns
-                null,       //The columns for the WHERE clause
-                null,       //The values for the WHERE clause
+                (constraint.equals("") ? null : ScanResultContract.FeedEntry.SCAN_NAME + " LIKE %?%"),       //The columns for the WHERE clause
+                (constraint.equals("") ? null : selectionArgs),       //The values for the WHERE clause
                 null,       //Any row grouping option
                 null,       //Any row filter options
                 sortOrder); //The sort order
