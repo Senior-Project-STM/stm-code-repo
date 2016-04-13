@@ -13,23 +13,25 @@ import os
 import random
 from threading import Thread, Lock
 
-serv_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)		#Create a bluetooth socket
-uuid = "37407000-8cf0-11bd-b23e-10b75c30d20a"
+def init_connection():
+	serv_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)		#Create a bluetooth socket
+	uuid = "37407000-8cf0-11bd-b23e-10b75c30d20a"
 
-#ser = serial.Serial('/dev/ttyACM0', 9600) #The serial port the arduino is connected on. Change this if needed
 
-print("Creating Bluetooth Server");
+	print("Creating Bluetooth Server");
 
-port = bluetooth.PORT_ANY			#Get any open bluetooth port
-serv_socket.bind(("", port))		#Bind to the bluetooth port
-serv_socket.listen(1)				#Listen on the port
-bluetooth.advertise_service(serv_socket, "STM", uuid)		#Advertise the stm service with the given uuid
+	port = bluetooth.PORT_ANY			#Get any open bluetooth port
+	serv_socket.bind(("", port))		#Bind to the bluetooth port
+	serv_socket.listen(1)				#Listen on the port
+	bluetooth.advertise_service(serv_socket, "STM", uuid)		#Advertise the stm service with the given uuid
 
-socket, address = serv_socket.accept()			#Accept the incoming connection
-print("Bluetooth Connection has been initiated with" + str(address[0]))
+	socket, address = serv_socket.accept()			#Accept the incoming connection
+	print("Bluetooth Connection has been initiated with" + str(address[0]))
+	return socket
 
 t = 0
 sending = False
+#ser = serial.Serial('/dev/ttyACM0', 9600) #The serial port the arduino is connected on. Change this if needed
 
 # # The old send_pictures
 # def send_pictures():		#This method will send all 11 images in a row, if scanning has started.
@@ -76,6 +78,7 @@ def scan():
 	"""
 	global t
 	global sending
+	global socket
 	v_array = np.zeros((1,1))			# Intermediary array with the results of the scan of one line 
 	size = 35 		#The size of the original scan to take
 
@@ -143,11 +146,21 @@ def scan():
 							break
 					i += 1
 			else:
+				fig.close()
 				break	
 
 
+socket = init_connection()
 while(True):		#This waits and reads for incoming commands.
-	command = socket.recv(100)
+	command = ""
+	try:
+		command = socket.recv(100)
+	except bluetooth.btcommon.BluetoothError:
+		print("Connection Closed")
+		print("Restarting")
+		socket = init_connection()
+		sending = False
+		continue
 	print("Received a command: " + command)
 	if command == "Start Scan":
 		if sending != True:
