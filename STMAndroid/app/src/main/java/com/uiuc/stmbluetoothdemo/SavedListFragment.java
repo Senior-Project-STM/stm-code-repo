@@ -52,7 +52,8 @@ public class SavedListFragment extends Fragment {
                         Long timeDb = Long.parseLong(cursor.getString(1));
                         Log.v("Time", Long.toString(timeDb));
                         deleteScan(timeDb);
-                        adapter.notifyDataSetChanged();
+                        cursor = getCursor(); //Rerun the database query so that any deleted items are removed
+                        adapter.notifyItemRemoved(i);
                     }
                 }
                 mSelector.clearSelections();
@@ -76,8 +77,8 @@ public class SavedListFragment extends Fragment {
         adapter = new SavedListAdapter(getActivity(), cursor, mSelector, deleteMode);
         adapter.setOnItemClickListener(new SavedListAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(String name, String time, String file_path) {
-                ((MainActivity) getActivity()).openDetailedSavedScanFragment(name, time, file_path);
+            public void onItemClick(String name, String time, String filePath, String extraNotes) {
+                ((MainActivity) getActivity()).openDetailedSavedScanFragment(name, time, filePath, extraNotes);
             }
         });
 
@@ -102,7 +103,8 @@ public class SavedListFragment extends Fragment {
         String[] projection = {
                 ScanResultContract.FeedEntry.SCAN_NAME,
                 ScanResultContract.FeedEntry.TIME,
-                ScanResultContract.FeedEntry.FILE_PATH
+                ScanResultContract.FeedEntry.FILE_PATH,
+                ScanResultContract.FeedEntry.EXTRA_NOTES
         };
 
         String sortOrder = ScanResultContract.FeedEntry.TIME + " desc";

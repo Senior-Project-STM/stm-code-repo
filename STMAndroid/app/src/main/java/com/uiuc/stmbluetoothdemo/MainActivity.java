@@ -67,12 +67,13 @@ public class MainActivity extends AppCompatActivity {
         mainFrag.save();
     }
 
-    public void openDetailedSavedScanFragment(String name, String date, String file_path) {
+    public void openDetailedSavedScanFragment(String name, String date, String filePath, String extraNotes) {
         detailFrag = new DetailedSavedScanFragment();
         Bundle args = new Bundle();
         args.putString("name", name);
         args.putString("date", date);
-        args.putString("file_path", file_path);
+        args.putString("file_path", filePath);
+        args.putString("extra_notes", extraNotes);
         detailFrag.setArguments(args);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.container, detailFrag, "detailed").addToBackStack("detailed")
@@ -87,9 +88,7 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }else if(id == R.id.action_saved) {
+        if(id == R.id.action_saved) {
             savedFrag = new SavedListFragment();
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.container, savedFrag, "saved").addToBackStack("saved")

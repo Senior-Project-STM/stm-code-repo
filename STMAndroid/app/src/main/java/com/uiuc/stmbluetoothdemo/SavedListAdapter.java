@@ -2,6 +2,8 @@ package com.uiuc.stmbluetoothdemo;
 
 import android.app.Activity;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -9,6 +11,7 @@ import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bignerdranch.android.multiselector.ModalMultiSelectorCallback;
@@ -31,7 +34,7 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
     Activity act;
 
     public interface OnItemClickListener {
-        void onItemClick(String name, String time, String file_path);
+        void onItemClick(String name, String time, String filePath, String extraNotes);
     }
 
     public void setOnItemClickListener(OnItemClickListener itemClickListener) {
@@ -65,7 +68,8 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
                     String nameDb = cursor.getString(0);
                     Long timeDb = Long.parseLong(cursor.getString(1));
                     String pathDb = cursor.getString(2);
-                    itemClickListener.onItemClick(nameDb, DateFormat.getDateTimeInstance().format(timeDb), pathDb);
+                    String extraNotes = cursor.getString(3);
+                    itemClickListener.onItemClick(nameDb, DateFormat.getDateTimeInstance().format(timeDb), pathDb, extraNotes);
                 }
             }
         }
@@ -121,14 +125,27 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
 
         TextView name = (TextView) v.findViewById(R.id.name);
         TextView date = (TextView) v.findViewById(R.id.date);
+        ImageView imageView = (ImageView) v.findViewById(R.id.image_thumbnail);
 
         getItem(position);
 
         String nameDb = cursor.getString(0);
         Long timeDb = Long.parseLong(cursor.getString(1));
+        String filepath = cursor.getString(2);
 
         name.setText(nameDb);
         date.setText(DateFormat.getDateTimeInstance().format(timeDb));
+        imageView.setImageBitmap(getBitmap(filepath));
+    }
+
+    /**
+     * Open up the bitmap from storage
+     * @return The bitmap
+     */
+    public Bitmap getBitmap(String filepath) {
+        BitmapFactory.Options option = new BitmapFactory.Options();
+        Bitmap bitmap = BitmapFactory.decodeFile(filepath, option);
+        return bitmap;
     }
 
     // Return the size of your dataset (invoked by the layout manager)

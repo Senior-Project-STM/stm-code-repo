@@ -1,5 +1,6 @@
 package com.uiuc.stmbluetoothdemo;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.Notification;
@@ -20,6 +21,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Message;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -34,7 +36,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -59,12 +63,10 @@ public class MainActivityFragment extends Fragment {
     boolean connected = false;
     boolean scanning = false;
     boolean pictureAvailable = false;
-    Notification notification = null;
     Button scanButton;
     Button saveButton;
     ImageView iv;
     ListView deviceList;
-    EditText scanName;
     Dialog deviceListDialog;
     int notificationID = 1;
     boolean dialogOpen = false;
@@ -172,7 +174,7 @@ public class MainActivityFragment extends Fragment {
 
     public void startScan() {
         if(connected) {
-            sendNotification();
+            sendNotification("STM Scan is occuring");
             buttonHandler.sendEmptyMessage(0);
             thread.write("Start Scan");
             scanning = true;
@@ -181,7 +183,7 @@ public class MainActivityFragment extends Fragment {
 
     public String savePicture(String name) {
         ContextWrapper cw = new ContextWrapper(getActivity());
-        File directory = cw.getDir("imageFolder", Context.MODE_PRIVATE); //Access the internal directory /path/imageFolder
+        File directory = getContext().getExternalFilesDir(null); //Access the external storage folder
         File path = new File(directory, name + ".jpg");
         FileOutputStream stream = null;
         try {
@@ -201,7 +203,7 @@ public class MainActivityFragment extends Fragment {
         return path.getAbsolutePath();
     }
 
-    public void saveToDb(String scanName, String imagePath, Long time) {
+    public void saveToDb(String scanName, String extraNotes, String imagePath, Long time) {
         ScanResultDbHelper dbHelper = new ScanResultDbHelper(getActivity());
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
@@ -210,6 +212,7 @@ public class MainActivityFragment extends Fragment {
         values.put(ScanResultContract.FeedEntry.TIME, time);
         values.put(ScanResultContract.FeedEntry.SCAN_NAME, scanName);
         values.put(ScanResultContract.FeedEntry.FILE_PATH, imagePath);
+        values.put(ScanResultContract.FeedEntry.EXTRA_NOTES, extraNotes);
 
         db.insert(ScanResultContract.FeedEntry.TABLE_NAME, "null", values);
         Log.v("Inserted", scanName + imagePath);
@@ -221,23 +224,38 @@ public class MainActivityFragment extends Fragment {
     public void openSaveDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
         builder.setTitle("Choose a name for the saved scan");
-        scanName = new EditText(this.getActivity());
-        scanName.setPadding(2, 2, 2, 2);
+        final EditText scanName = new EditText(this.getActivity());
         scanName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        final EditText extra_notes = new EditText(this.getActivity());
+        extra_notes.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        final TextView name = new TextView(getActivity());
+        name.setText("Set Name:");
+        final TextView notes = new TextView(getActivity());
+        name.setText("Any Other Notes:");
+        LinearLayout l = new LinearLayout(this.getActivity());
+        l.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(4, 4, 4, 4);
+        l.setLayoutParams(params);
+        l.addView(name);
+        l.addView(scanName);
+        l.addView(notes);
+        l.addView(extra_notes);
 
-        builder.setView(v);
+        builder.setView(l);
 
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 Long time = System.currentTimeMillis();
                 String path = savePicture(scanName.getText().toString() + Long.toString(time));
                 Log.v("Path", path);
-                saveToDb(scanName.getText().toString() + Long.toString(time), path, time);
+                saveToDb(scanName.getText().toString(), extra_notes.getText().toString(), path, time);
             }
         });
 
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
+                dialogOpen = false;
                 dialog.cancel();
             }
         });
@@ -250,7 +268,7 @@ public class MainActivityFragment extends Fragment {
         builder.setTitle("Choose Bluetooth Device");
 
         deviceList = new ListView(this.getActivity());
-        deviceList.setPadding(2, 2, 2, 2);
+        deviceList.setPadding(4, 4, 4, 4);
         deviceList.setAdapter(deviceListAdapter);
 
         //Get all of the already bonded devices and add them to the list of devices to connect to
@@ -273,6 +291,12 @@ public class MainActivityFragment extends Fragment {
                 BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(lines[1]);
                 ConnectThread connectThread = new ConnectThread(lines[0], device);
                 connectThread.start();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
             }
         });
         builder.setView(deviceList);
@@ -364,7 +388,7 @@ public class MainActivityFragment extends Fragment {
                         scanDoneResp[i] = buffer[i];
                     }
                     if(count == 4 && (new String(picDoneResp)).equals("Done")) {
-                        sendNotification();
+                        sendNotification("STM Scan is occuring");
                         Log.i("Image", "Image Received");
                         write("Received");  //Acknowledge that the image has been received.
                         byte[] arr = new byte[totalCountRead];
@@ -378,6 +402,7 @@ public class MainActivityFragment extends Fragment {
                     }
                     else if(count == 13 && (new String(scanDoneResp)).equals("Scan Finished")) {        //If the scan has finished
                         Log.i("Scan Finished", "Scan Finished");
+                        sendNotification("STM Scan has finished");
                         scanning = false;
                         pictureAvailable = true;
                         cancelNotification();
@@ -487,14 +512,15 @@ public class MainActivityFragment extends Fragment {
     /**
      * Create a persistent notification when scanning starts
      */
-    public void sendNotification() {
+    public void sendNotification(String title) {
         Intent intent = new Intent(getContext(), MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pIntent = PendingIntent.getActivity(getContext(), 0, intent, 0);
         Notification.Builder builder = new Notification.Builder(getActivity());
-        builder.setContentTitle("STM Scan is occuring");
-        builder.setContentText("Scanning from: " + connectedTo);
+        builder.setContentTitle(title);
+        builder.setContentText("Connected to: " + connectedTo);
+
         builder.setTicker("Fancy Notification");
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setLargeIcon(bm);

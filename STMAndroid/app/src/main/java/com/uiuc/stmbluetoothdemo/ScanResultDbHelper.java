@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class ScanResultDbHelper extends SQLiteOpenHelper {
 
     //This is the version. It must be incremented if the schema changes
-    public static final int DATABASE_VERSION = 1;
+    public static final int DATABASE_VERSION = 2;
     public static final String DATABASE_NAME = "ScanResult.db";
 
     private static final String TEXT_TYPE = " TEXT";
@@ -19,7 +19,8 @@ public class ScanResultDbHelper extends SQLiteOpenHelper {
             "CREATE TABLE " + ScanResultContract.FeedEntry.TABLE_NAME + "(" +
                     ScanResultContract.FeedEntry.TIME + " INTEGER PRIMARY KEY," +
                     ScanResultContract.FeedEntry.SCAN_NAME + TEXT_TYPE + COMMA_SEP +
-                    ScanResultContract.FeedEntry.FILE_PATH + TEXT_TYPE + ");";
+                    ScanResultContract.FeedEntry.FILE_PATH + TEXT_TYPE + COMMA_SEP +
+                    ScanResultContract.FeedEntry.EXTRA_NOTES + TEXT_TYPE + ");";
 
     private static final String SQL_DELETE_ENTRIES =
             "DROP TABLE IF EXISTS " + ScanResultContract.FeedEntry.TABLE_NAME;

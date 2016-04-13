@@ -16,5 +16,7 @@ public class ScanResultContract {
         public static final String TIME = "time";
         public static final String SCAN_NAME = "scan_name";
         public static final String FILE_PATH = "file_path";
+        public static final String EXTRA_NOTES = "notes";
+
     }
 }
