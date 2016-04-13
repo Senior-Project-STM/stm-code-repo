@@ -63,6 +63,10 @@ public class MainActivity extends AppCompatActivity {
         mainFrag.reset();
     }
 
+    public void disconnect(View v) {
+        mainFrag.disconnect();
+    }
+
     /**
      * Calls the save method in the Fragment
      * @param v

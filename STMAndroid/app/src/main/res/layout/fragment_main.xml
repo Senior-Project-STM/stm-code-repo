@@ -48,5 +48,13 @@
         android:onClick="save"
         android:layout_gravity="center_horizontal"/>
 
+    <Button
+        android:id="@+id/disconnect"
+        android:text="Disconnect From Microscope"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="disconnect"
+        android:layout_gravity="center_horizontal"/>
+
 
 </LinearLayout>

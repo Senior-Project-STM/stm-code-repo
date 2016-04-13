@@ -5,6 +5,8 @@ import threading
 import serial
 import select
 import numpy as np
+import matplotlib
+matplotlib.use('SVG')
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import csv
@@ -12,6 +14,8 @@ import time
 import os
 import random
 from threading import Thread, Lock
+
+
 
 def init_connection():
 	serv_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)		#Create a bluetooth socket
@@ -80,7 +84,7 @@ def scan():
 	global sending
 	global socket
 	v_array = np.zeros((1,1))			# Intermediary array with the results of the scan of one line 
-	size = 35 		#The size of the original scan to take
+	size = 20 		#The size of the original scan to take
 
 	#These lines initalize the figure
 	fig = plt.figure()

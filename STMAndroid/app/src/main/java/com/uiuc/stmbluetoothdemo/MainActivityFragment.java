@@ -66,6 +66,7 @@ public class MainActivityFragment extends Fragment {
     boolean pictureAvailable = false;
     Button scanButton;
     Button saveButton;
+    Button disconnectButton;
     ImageView iv;
     ListView deviceList;
     Dialog deviceListDialog;
@@ -117,6 +118,7 @@ public class MainActivityFragment extends Fragment {
         scanButton = (Button) v.findViewById(R.id.scan);
         resetButton = (Button) v.findViewById(R.id.reset);
         saveButton = (Button) v.findViewById(R.id.save);
+        disconnectButton = (Button) v.findViewById(R.id.disconnect);
         deviceListAdapter = new ArrayAdapter<String>(getActivity(),
                 R.layout.list_view);
         titleHandler = new Handler() {                  //Handler to set the title to be displayed
@@ -138,6 +140,7 @@ public class MainActivityFragment extends Fragment {
                 if(connected) {
                     //connectButton.setText("Microscope Connected");
                     connectButton.setVisibility(View.GONE);
+                    disconnectButton.setVisibility(View.VISIBLE);
                     if(scanning) {
                         scanButton.setVisibility(View.GONE);
                     }
@@ -147,6 +150,7 @@ public class MainActivityFragment extends Fragment {
                 }
                 else {
                     connectButton.setText("Connect to Microscope");
+                    disconnectButton.setVisibility(View.GONE);
                     connectButton.setVisibility(View.VISIBLE);
                     scanButton.setVisibility(View.GONE);
                 }
@@ -182,6 +186,9 @@ public class MainActivityFragment extends Fragment {
         }
     }
 
+    /**
+     * Resets the scan, and clears out the Bitmap
+     */
     public void reset() {
         cancelNotification();
         scanning = false;
@@ -193,12 +200,27 @@ public class MainActivityFragment extends Fragment {
         buttonHandler.sendEmptyMessage(0);
     }
 
+    /**
+     * Saves the result of the scan to file and to the database
+     */
     public void save() {
         if(pictureAvailable) {
             openSaveDialog();
         }
     }
 
+    /**
+     * Disconnects from the current microscope
+     */
+    public void disconnect() {
+        if(connected) {
+            thread.cancel();
+        }
+    }
+
+    /**
+     * If a microscope is connected, scanning will start
+     */
     public void startScan() {
         if(connected) {
             sendNotification("STM Scan is occuring");

@@ -59,10 +59,10 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
                         Log.v("Time", Long.toString(timeDb));
                         deleteScan(timeDb);
                         deleteImage(cursor.getString(2));
-                        adapter.changeCursor(getCursor("")); //Rerun the database query so that any deleted items are removed
                         adapter.notifyItemRemoved(i);
                     }
                 }
+                adapter.changeCursor(getCursor("")); //Rerun the database query so that any deleted items are removed
                 mSelector.clearSelections();
                 return true;
             }
@@ -116,6 +116,7 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        ((MainActivity) getActivity()).setTitle("Saved Scans");
         myView = inflater.inflate(R.layout.fragment_saved, container, false);
         Cursor cursor = getCursor("");
         adapter = new SavedListAdapter(getActivity(), cursor, mSelector, deleteMode);
