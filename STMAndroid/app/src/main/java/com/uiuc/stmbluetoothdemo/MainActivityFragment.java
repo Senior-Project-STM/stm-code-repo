@@ -2,6 +2,9 @@ package com.uiuc.stmbluetoothdemo;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -21,6 +24,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,11 +59,14 @@ public class MainActivityFragment extends Fragment {
     boolean connected = false;
     boolean scanning = false;
     boolean pictureAvailable = false;
+    Notification notification = null;
     Button scanButton;
     Button saveButton;
     ImageView iv;
     ListView deviceList;
+    EditText scanName;
     Dialog deviceListDialog;
+    int notificationID = 1;
     boolean dialogOpen = false;
     ArrayAdapter<String> deviceListAdapter;
     ArrayList<Byte> bufferMain = new ArrayList<Byte>();
@@ -67,6 +74,7 @@ public class MainActivityFragment extends Fragment {
     Handler imageHandler;
     Handler buttonHandler;
     Bitmap bm;
+    String connectedTo = "";
     CommThread thread;
     static boolean readyToSend = false; //A Flag that shows whether we are ready to send messages or not
     BluetoothAdapter myBluetoothAdapter;
@@ -146,6 +154,7 @@ public class MainActivityFragment extends Fragment {
     }
 
     public void reset() {
+        cancelNotification();
         scanning = false;
         pictureAvailable = false;
         iv.setImageBitmap(null);
@@ -163,6 +172,7 @@ public class MainActivityFragment extends Fragment {
 
     public void startScan() {
         if(connected) {
+            sendNotification();
             buttonHandler.sendEmptyMessage(0);
             thread.write("Start Scan");
             scanning = true;
@@ -191,13 +201,13 @@ public class MainActivityFragment extends Fragment {
         return path.getAbsolutePath();
     }
 
-    public void saveToDb(String scanName, String imagePath) {
+    public void saveToDb(String scanName, String imagePath, Long time) {
         ScanResultDbHelper dbHelper = new ScanResultDbHelper(getActivity());
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         //These are the values you will insert into the database
         ContentValues values = new ContentValues();
-        values.put(ScanResultContract.FeedEntry.TIME, System.currentTimeMillis());
+        values.put(ScanResultContract.FeedEntry.TIME, time);
         values.put(ScanResultContract.FeedEntry.SCAN_NAME, scanName);
         values.put(ScanResultContract.FeedEntry.FILE_PATH, imagePath);
 
@@ -211,14 +221,18 @@ public class MainActivityFragment extends Fragment {
     public void openSaveDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
         builder.setTitle("Choose a name for the saved scan");
-        final EditText input = new EditText(getActivity());
-        builder.setView(input);
+        scanName = new EditText(this.getActivity());
+        scanName.setPadding(2, 2, 2, 2);
+        scanName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+
+        builder.setView(v);
 
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
-                String path = savePicture(input.getText().toString());
+                Long time = System.currentTimeMillis();
+                String path = savePicture(scanName.getText().toString() + Long.toString(time));
                 Log.v("Path", path);
-                saveToDb(input.getText().toString(), path);
+                saveToDb(scanName.getText().toString() + Long.toString(time), path, time);
             }
         });
 
@@ -236,6 +250,7 @@ public class MainActivityFragment extends Fragment {
         builder.setTitle("Choose Bluetooth Device");
 
         deviceList = new ListView(this.getActivity());
+        deviceList.setPadding(2, 2, 2, 2);
         deviceList.setAdapter(deviceListAdapter);
 
         //Get all of the already bonded devices and add them to the list of devices to connect to
@@ -256,7 +271,7 @@ public class MainActivityFragment extends Fragment {
                 deviceListAdapter.clear();
                 deviceListAdapter.notifyDataSetChanged();
                 BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(lines[1]);
-                ConnectThread connectThread = new ConnectThread(device);
+                ConnectThread connectThread = new ConnectThread(lines[0], device);
                 connectThread.start();
             }
         });
@@ -349,6 +364,7 @@ public class MainActivityFragment extends Fragment {
                         scanDoneResp[i] = buffer[i];
                     }
                     if(count == 4 && (new String(picDoneResp)).equals("Done")) {
+                        sendNotification();
                         Log.i("Image", "Image Received");
                         write("Received");  //Acknowledge that the image has been received.
                         byte[] arr = new byte[totalCountRead];
@@ -364,6 +380,7 @@ public class MainActivityFragment extends Fragment {
                         Log.i("Scan Finished", "Scan Finished");
                         scanning = false;
                         pictureAvailable = true;
+                        cancelNotification();
                         Snackbar.make(v, "Scan has finished", Snackbar.LENGTH_LONG).setAction("Action", null).show();
                     }
                     else {
@@ -396,8 +413,10 @@ public class MainActivityFragment extends Fragment {
         /** Will cancel the listening socket, and cause the thread to finish */
         public void cancel() {
             try {
+                cancelNotification();
                 socket.close();
                 connected = false;  //Disables the sending of messages, and renables the connect button
+                connectedTo = "";
                 buttonHandler.sendEmptyMessage(0);
                 Snackbar.make(v, "Connection to microscope has been terminated", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
@@ -410,14 +429,16 @@ public class MainActivityFragment extends Fragment {
      */
     private class ConnectThread extends Thread {
         BluetoothSocket socket = null;
+        String device_name;
 
-        public ConnectThread(BluetoothDevice device) {
+        public ConnectThread(String device_name, BluetoothDevice device) {
             // Get a BluetoothSocket to connect with the given BluetoothDevice
             try {
                 Log.v("Try", "Attempting to create bluetooth socket");
                 // MY_UUID is the app's UUID string, also used by the server code
                 socket = device.createRfcommSocketToServiceRecord(MY_UUID);
                 Log.v("Created", "Created Socket");
+                this.device_name = device_name;
             } catch (IOException e) { }
 
         }
@@ -446,6 +467,7 @@ public class MainActivityFragment extends Fragment {
                             .setAction("Action", null).show();
                     Log.w("Socket", "Bluetooth connection has been established");
                     thread = new CommThread(socket);
+                    connectedTo = device_name;
                     thread.start();
                     connected = true; //Enables the sending of messages, and disables connecting to microscope
                     buttonHandler.sendEmptyMessage(0);
@@ -460,6 +482,33 @@ public class MainActivityFragment extends Fragment {
                 socket.close();
             } catch (IOException e) { }
         }
+    }
+
+    /**
+     * Create a persistent notification when scanning starts
+     */
+    public void sendNotification() {
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pIntent = PendingIntent.getActivity(getContext(), 0, intent, 0);
+        Notification.Builder builder = new Notification.Builder(getActivity());
+        builder.setContentTitle("STM Scan is occuring");
+        builder.setContentText("Scanning from: " + connectedTo);
+        builder.setTicker("Fancy Notification");
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        builder.setLargeIcon(bm);
+        builder.setContentIntent(pIntent);
+        Notification notification = builder.build();
+        NotificationManager notificationManger =
+                (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManger.notify(notificationID, notification);
+    }
+
+    public void cancelNotification() {
+        NotificationManager notificationManager =
+                (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(notificationID);
     }
 
     @Override

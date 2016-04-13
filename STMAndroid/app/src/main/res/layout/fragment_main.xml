@@ -19,7 +19,7 @@
     <Button
         android:id="@+id/connect"
         android:text="Connect To Microscope"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="startBluetooth"
         android:layout_gravity="center_horizontal"/>
@@ -27,7 +27,7 @@
     <Button
         android:id="@+id/scan"
         android:text="Start Scan"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="startScan"
         android:layout_gravity="center_horizontal"/>
@@ -35,7 +35,7 @@
     <Button
         android:id="@+id/reset"
         android:text="Reset Scan"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="reset"
         android:layout_gravity="center_horizontal"/>
@@ -43,7 +43,7 @@
     <Button
         android:id="@+id/save"
         android:text="Save Results"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="save"
         android:layout_gravity="center_horizontal"/>

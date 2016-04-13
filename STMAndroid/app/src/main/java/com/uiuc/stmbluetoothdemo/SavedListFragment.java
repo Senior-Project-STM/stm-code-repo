@@ -7,6 +7,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.view.ActionMode;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,9 +23,11 @@ import com.bignerdranch.android.multiselector.MultiSelector;
 public class SavedListFragment extends Fragment {
     SavedListAdapter adapter;
     SQLiteDatabase db;
+    SQLiteDatabase writeDB;
     ScanResultDbHelper dbHelper;
     View myView;
     RecyclerView myRecyclerView;
+
 
     private MultiSelector mSelector = new MultiSelector();      //Allows you to select multiple entries, and delete them
     private ModalMultiSelectorCallback deleteMode = new ModalMultiSelectorCallback(mSelector) {
@@ -46,10 +49,10 @@ public class SavedListFragment extends Fragment {
                 for (int i = 0; i < adapter.getItemCount(); i++) {
                     if (mSelector.isSelected(i, 0)) {
                         adapter.getItem(i);
-                        
-                        Crime crime = mCrimes.get(i);
-                        CrimeLab.get(getActivity()).deleteCrime(crime);
-                        mRecyclerView.getAdapter().notifyItemRemoved(i);
+                        Long timeDb = Long.parseLong(cursor.getString(1));
+                        Log.v("Time", Long.toString(timeDb));
+                        deleteScan(timeDb);
+                        adapter.notifyDataSetChanged();
                     }
                 }
                 mSelector.clearSelections();
@@ -59,12 +62,18 @@ public class SavedListFragment extends Fragment {
         }
     };
 
+    public void deleteScan(Long timestamp) {
+        String selection = ScanResultContract.FeedEntry.TIME + "=?";
+        String[] args = {Long.toString(timestamp)};
+        writeDB.delete(ScanResultContract.FeedEntry.TABLE_NAME, selection, args);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         myView = inflater.inflate(R.layout.fragment_saved, container, false);
         Cursor cursor = getCursor();
-        adapter = new SavedListAdapter(cursor);
+        adapter = new SavedListAdapter(getActivity(), cursor, mSelector, deleteMode);
         adapter.setOnItemClickListener(new SavedListAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(String name, String time, String file_path) {
@@ -88,6 +97,7 @@ public class SavedListFragment extends Fragment {
     public Cursor getCursor() {
         dbHelper = new ScanResultDbHelper(getActivity());
         db = dbHelper.getReadableDatabase();
+        writeDB = dbHelper.getWritableDatabase();
 
         String[] projection = {
                 ScanResultContract.FeedEntry.SCAN_NAME,
@@ -107,4 +117,6 @@ public class SavedListFragment extends Fragment {
 
         return cursor;
     }
+
+
 }

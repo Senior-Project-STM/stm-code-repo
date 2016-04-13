@@ -1,7 +1,9 @@
 package com.uiuc.stmbluetoothdemo;
 
+import android.app.Activity;
 import android.database.Cursor;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
@@ -9,8 +11,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.bignerdranch.android.multiselector.ModalMultiSelectorCallback;
+import com.bignerdranch.android.multiselector.MultiSelector;
+import com.bignerdranch.android.multiselector.SwappingHolder;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -19,6 +26,9 @@ import java.util.Date;
 public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.ViewHolder> {
     private Cursor cursor;
     OnItemClickListener itemClickListener;
+    MultiSelector mSelector;
+    ModalMultiSelectorCallback deleteMode;
+    Activity act;
 
     public interface OnItemClickListener {
         void onItemClick(String name, String time, String file_path);
@@ -31,34 +41,49 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+    public class ViewHolder extends SwappingHolder implements View.OnClickListener, View.OnLongClickListener {
         //Each data item is a CardView
         public CardView myCardView;
+        public long time;
 
         public ViewHolder(CardView v) {
-            super(v);
+            super(v, mSelector);
             v.setOnClickListener(this);
+            v.setLongClickable(true);
+            v.setOnLongClickListener(this);
             myCardView = v;
         }
 
         @Override
         public void onClick(View v) {
-            String text = ((TextView) (v.findViewById(R.id.name))).getText().toString();
-            Snackbar.make(v, "Clicked on " + text, Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
-            if (itemClickListener != null) {
-                getItem(this.getPosition());
-                String nameDb = cursor.getString(0);
-                Long timeDb = Long.parseLong(cursor.getString(1));
-                String pathDb = cursor.getString(2);
-                itemClickListener.onItemClick(nameDb, DateFormat.getDateTimeInstance().format(timeDb), pathDb);
+            if (!mSelector.tapSelection(this)) {        //If it wasn't clicked with the multiselector open
+                String text = ((TextView) (v.findViewById(R.id.name))).getText().toString();
+                Snackbar.make(v, "Clicked on " + text, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+                if (itemClickListener != null) {
+                    getItem(this.getPosition());
+                    String nameDb = cursor.getString(0);
+                    Long timeDb = Long.parseLong(cursor.getString(1));
+                    String pathDb = cursor.getString(2);
+                    itemClickListener.onItemClick(nameDb, DateFormat.getDateTimeInstance().format(timeDb), pathDb);
+                }
             }
+        }
+
+        @Override
+        public boolean onLongClick(View v) {
+            ((AppCompatActivity) act).startSupportActionMode(deleteMode);
+            mSelector.setSelected(this, true);
+            return true;
         }
     }
 
     //Constructor. It accepts a database cursor which access all of the saved scans.
-    public SavedListAdapter(Cursor cursor) {
+    public SavedListAdapter(Activity act, Cursor cursor, MultiSelector mSelector, ModalMultiSelectorCallback deleteMode) {
         this.cursor = cursor;
+        this.mSelector = mSelector;
+        this.deleteMode = deleteMode;
+        this.act = act;
     }
 
     /**

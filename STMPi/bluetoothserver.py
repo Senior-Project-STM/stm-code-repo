@@ -77,7 +77,7 @@ def scan():
 	global t
 	global sending
 	v_array = np.zeros((1,1))			# Intermediary array with the results of the scan of one line 
-	size = 40 		#The size of the original scan to take
+	size = 35 		#The size of the original scan to take
 
 	#These lines initalize the figure
 	fig = plt.figure()
@@ -95,7 +95,8 @@ def scan():
 
 
 	v_array = np.zeros((1,1))		#Zero out the output array 
-	start = random.randint(0, 400 - size)
+	start = random.randint(0, 400 - size - 5)
+	print(start)
 	print 'start getting'
 	values = list()
 	with open('test_data.csv', 'rb') as f:
@@ -113,7 +114,7 @@ def scan():
 					value_units = row[0].split(':')[1].strip()
 				else:
 					if i >= start:		#Only send out the size x size image in the range you want
-						if i < start + size:
+						if i < start + size + 1:
 							row = map(float,row)
 							values.append(row[start:start+size])
 							v_array = np.asarray(values)		#Save the rwo of the csv file as a numpy array
@@ -133,7 +134,7 @@ def scan():
 									socket.send(stuff)
 									socket.send("Done")
 									time.sleep(1)
-							time.sleep(2)
+							time.sleep(1)
 						else: 
 							for j in range(3):
 								socket.send("Scan Finished")
