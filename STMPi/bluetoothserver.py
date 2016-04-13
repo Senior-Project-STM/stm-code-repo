@@ -18,9 +18,13 @@ from threading import Thread, Lock
 
 
 def init_connection():
+	"""
+	This method sets up a bluetooth server connection on any available bluetooth port. 
+	The given uuid uniquely represents the bluetooth connection for the STM, so they must be the same on
+	both the server and the Android phone
+	""" 
 	serv_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)		#Create a bluetooth socket
 	uuid = "37407000-8cf0-11bd-b23e-10b75c30d20a"
-
 
 	print("Creating Bluetooth Server");
 
@@ -36,43 +40,6 @@ def init_connection():
 t = 0
 sending = False
 #ser = serial.Serial('/dev/ttyACM0', 9600) #The serial port the arduino is connected on. Change this if needed
-
-# # The old send_pictures
-# def send_pictures():		#This method will send all 11 images in a row, if scanning has started.
-# 	global t
-# 	global sending
-# 	if sending == True:
-# 		images = ["scan_images/0.jpg", "scan_images/1.jpg", "scan_images/2.jpg", "scan_images/3.jpg", "scan_images/4.jpg", "scan_images/5.jpg", "scan_images/6.jpg", "scan_images/7.jpg", "scan_images/8.jpg", "scan_images/9.jpg", "scan_images/10.jpg"]
-# 		item = images[t]
-# 		with open(item, "rb") as image:
-# 			stuff = image.read()
-# 			print("Communicating with Arduino")
-# 			#ser.write("Start")			#Send a request to the Arduino
-# 			#response = ser.readline()   #Wait for a response from the Arduino
-# 			print("Sending Image %d" % t)
-# 			for j in range(3):
-# 				socket.send(stuff)
-# 				socket.send("Done")
-# 				time.sleep(1)
-# 			t += 1
-# 		if t == 11:
-# 			for j in range(3):
-# 				socket.send("Scan Finished")
-# 			t = 0
-# 			sending = False
-# 		else:
-# 			threading.Timer(1.0, send_pictures).start()
-
-# while(True):		#This waits and reads for incoming commands.
-# 	command = socket.recv(100)
-# 	print("Received a command: " + command)
-# 	if command == "Start Scan":
-# 		if sending != True:
-# 			sending = True
-# 			send_pictures();
-# 	elif command == "Reset Scan":
-# 		sending = False
-# 		i = 0
 
 
 def scan():
@@ -102,16 +69,16 @@ def scan():
 
 
 	v_array = np.zeros((1,1))		#Zero out the output array 
-	start = random.randint(0, 400 - size - 5)
+	start = random.randint(0, 400 - size - 5)		#Find a random position to start at
 	print(start)
 	print 'start getting'
 	values = list()
-	with open('test_data.csv', 'rb') as f:
+	with open('test_data.csv', 'rb') as f:		#Open up the input csv file
 		reader = csv.reader(f)
-		i = 0
-		for row in reader:
-			if sending:
-				if 'Channel' in row[0]:
+		i = 0	
+		for row in reader:					#Loop through row by row
+			if sending:						#Make sure we are still sending out images
+				if 'Channel' in row[0]:						#The first few lines have some additional configuration info
 					channel = row[0].split(':')[1].strip()
 				elif 'Width' in row[0]:
 					width = row[0].split(':')[1].strip()
@@ -121,57 +88,56 @@ def scan():
 					value_units = row[0].split(':')[1].strip()
 				else:
 					if i >= start:		#Only send out the size x size image in the range you want
-						if i < start + size + 1:
-							row = map(float,row)
-							values.append(row[start:start+size])
+						if i < start + size + 1:		
+							row = map(float,row)	
+							values.append(row[start:start+size])	#Take size values from the row, so that you have a size by size square of values
 							v_array = np.asarray(values)		#Save the rwo of the csv file as a numpy array
 
-							ax1.clear()
+							ax1.clear()						#Clear out the image, and update it with new values
 							ax1.set_xlim([0, size])
 							ax1.set_ylim([size, 0])
 							im = ax1.pcolor(v_array, cmap=cmap, vmin=vmin, vmax=vmax)
 							fig.savefig("out.jpg", bbox_inches=0)			#Save the updated image as a jpg
-							with open("out.jpg", "rb") as image:
+							with open("out.jpg", "rb") as image:		#Open the image back up
 								stuff = image.read()
 								print("Communicating with Arduino")
 								#ser.write("Start")			#Send a request to the Arduino
 								#response = ser.readline()   #Wait for a response from the Arduino
-								print("Sending Image %d" % t)
-								for j in range(2):
+								print("Sending Image %d" % t)	#Send the image
+								for j in range(2):				#Send it twice to make sure it is received. Sometimes, the send does not work
 									socket.send(stuff)
-									socket.send("Done")
+									socket.send("Done")			#Send Done so that the Android app knows that sending is complete
 									time.sleep(1)
 							time.sleep(1)
 						else: 
-							for j in range(3):
+							for j in range(3):					#Send this out to signal that scanning has finished
 								socket.send("Scan Finished")
 							t = 0	
-							sending = False
+							sending = False			#Set scanning back to false
+							fig.close()				#Close the old figure as we are no longer scanning
 							break
 					i += 1
 			else:
-				fig.close()
+				fig.close()				#Close the old figure as we are no longer scanning
 				break	
 
 
-socket = init_connection()
+socket = init_connection()		#Init the connection
 while(True):		#This waits and reads for incoming commands.
 	command = ""
 	try:
-		command = socket.recv(100)
-	except bluetooth.btcommon.BluetoothError:
+		command = socket.recv(100)		#Try to read a command
+	except bluetooth.btcommon.BluetoothError:	#The socket has been closed
 		print("Connection Closed")
 		print("Restarting")
-		socket = init_connection()
+		socket = init_connection()			#Reinit the connection to restart the server
 		sending = False
 		continue
-	print("Received a command: " + command)
-	if command == "Start Scan":
+	print("Received a command: " + command)	
+	if command == "Start Scan":			#If the command is to start the scan
 		if sending != True:
-			sending = True
+			sending = True					#Start the scan function on a new Thread
 			t1 = Thread(target = scan)
 			t1.start()
-	elif command == "Reset Scan":
+	elif command == "Reset Scan":			#Restart the scan
 		sending = False
-
-
