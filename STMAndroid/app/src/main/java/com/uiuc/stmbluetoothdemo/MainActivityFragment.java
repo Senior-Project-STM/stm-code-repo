@@ -25,6 +25,7 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AlertDialog;
 import android.text.InputType;
 import android.util.Log;
@@ -90,12 +91,28 @@ public class MainActivityFragment extends Fragment {
     public MainActivityFragment() {
     }
 
+//    @Override
+//    public void onCreate(Bundle savedInstanceState) {
+//        super.onCreate(savedInstanceState);
+//        // retain this fragment
+//        setRetainInstance(true);
+//    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.fragment_main, container, false);
         iv = (ImageView) v.findViewById(R.id.imageView);
         iv.setImageBitmap(bm);
+        iv.setOnClickListener(new View.OnClickListener() {           // A click listener for the image
+            @Override
+            public void onClick(View v) {
+                FragmentManager fm = getActivity().getSupportFragmentManager();         //Create an image Dialog to display the scan image as a large image
+                ImageDialogFragment frag = ImageDialogFragment.newInstance(bm);
+                frag.show(fm, "image");
+
+            }
+        });
         connectButton = (Button) v.findViewById(R.id.connect);
         scanButton = (Button) v.findViewById(R.id.scan);
         resetButton = (Button) v.findViewById(R.id.reset);
@@ -504,9 +521,9 @@ public class MainActivityFragment extends Fragment {
                     Log.w("Socket", "Bluetooth connection has been established");
                     thread = new CommThread(socket);
                     connectedTo = device_name;
-                    titleHandler.sendEmptyMessage(0);
                     thread.start();
                     connected = true; //Enables the sending of messages, and disables connecting to microscope
+                    titleHandler.sendEmptyMessage(0);
                     buttonHandler.sendEmptyMessage(0);
                     break;
                 }
@@ -552,6 +569,10 @@ public class MainActivityFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        getActivity().unregisterReceiver(mReceiver);
+        try {
+            getActivity().unregisterReceiver(mReceiver);
+        } catch (IllegalArgumentException e) {
+            Log.v("Receiver", "Not registered");
+        }
     }
 }

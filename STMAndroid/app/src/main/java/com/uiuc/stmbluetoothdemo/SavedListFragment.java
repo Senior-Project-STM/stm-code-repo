@@ -21,6 +21,8 @@ import android.widget.FilterQueryProvider;
 import com.bignerdranch.android.multiselector.ModalMultiSelectorCallback;
 import com.bignerdranch.android.multiselector.MultiSelector;
 
+import java.io.File;
+
 /**
  * Created by chrx on 4/4/16.
  */
@@ -56,6 +58,7 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
                         Long timeDb = Long.parseLong(cursor.getString(1));
                         Log.v("Time", Long.toString(timeDb));
                         deleteScan(timeDb);
+                        deleteImage(cursor.getString(2));
                         adapter.changeCursor(getCursor("")); //Rerun the database query so that any deleted items are removed
                         adapter.notifyItemRemoved(i);
                     }
@@ -73,6 +76,11 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
         writeDB.delete(ScanResultContract.FeedEntry.TABLE_NAME, selection, args);
     }
 
+    public void deleteImage(String filepath) {
+        File file = new File(filepath);
+        file.delete();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,6 +88,7 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
         db = dbHelper.getReadableDatabase();
         writeDB = dbHelper.getWritableDatabase();
         setHasOptionsMenu(true);
+//        setRetainInstance(true);
     }
 
     @Override
@@ -139,13 +148,13 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
                 ScanResultContract.FeedEntry.EXTRA_NOTES
         };
 
-        String[] selectionArgs = {constraint};
+        String[] selectionArgs = {"%" + constraint + "%"};
 
         String sortOrder = ScanResultContract.FeedEntry.TIME + " desc";
 
         Cursor cursor = db.query(ScanResultContract.FeedEntry.TABLE_NAME, //Table Name
                 projection,  //The columns
-                (constraint.equals("") ? null : ScanResultContract.FeedEntry.SCAN_NAME + " LIKE %?%"),       //The columns for the WHERE clause
+                (constraint.equals("") ? null : ScanResultContract.FeedEntry.SCAN_NAME + " LIKE ?"),       //The columns for the WHERE clause
                 (constraint.equals("") ? null : selectionArgs),       //The values for the WHERE clause
                 null,       //Any row grouping option
                 null,       //Any row filter options

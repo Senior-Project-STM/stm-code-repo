@@ -1,0 +1,58 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:orientation="horizontal"
+    android:layout_gravity="center">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/connect"
+            android:text="Connect To Microscope"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="startBluetooth"
+            android:layout_gravity="center_horizontal"/>
+
+        <Button
+            android:id="@+id/scan"
+            android:text="Start Scan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="startScan"
+            android:layout_gravity="center_horizontal"/>
+
+        <Button
+            android:id="@+id/reset"
+            android:text="Reset Scan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="reset"
+            android:layout_gravity="center_horizontal"/>
+
+        <Button
+            android:id="@+id/save"
+            android:text="Save Results"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="save"
+            android:layout_gravity="center_horizontal"/>
+    </LinearLayout>
+
+
+</LinearLayout>

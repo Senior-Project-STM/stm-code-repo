@@ -41,6 +41,7 @@ public class DetailedSavedScanFragment  extends Fragment {
         notes = args.getString("extra_notes");
         Log.v("Detailed View", filepath);
         setHasOptionsMenu(true);
+//        setRetainInstance(true);
     }
 
     @Override
@@ -55,7 +56,7 @@ public class DetailedSavedScanFragment  extends Fragment {
         Button updateButton = (Button) myView.findViewById(R.id.updateButton);
 
         imageView.setImageBitmap(getBitmap());
-        imageView.setOnClickListener(new View.OnClickListener() {
+        imageView.setOnClickListener(new View.OnClickListener() {           // A click listener for the image
             @Override
             public void onClick(View v) {
                 FragmentManager fm = getActivity().getSupportFragmentManager();         //Create an image Dialog to display the scan image as a large image
