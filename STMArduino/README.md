@@ -1,25 +1,7 @@
-Senior Project STM
-===================
-This is the repo for our Scanning Tunneling Microscope project. The project was for CS492-493 Senior Project, at the University of Illinois at Urbana-Champaign.
-There are 4 seperate sections:
-* An Android App
-* A Bluetooth Server on the Raspberry Pi
-* A Web Server on the Raspberry Pi
-* Arduino code
+STMArduino
+==========
+This is our Arduino code. It is merely a demo right now to show communication between the Raspberry Pi and Arduino. It will eventually control the DACs and ADC and do actual scans.
 
-##Main Contributors
-* Atul Nambudiri
-* Jiayi Cao
-* Jennifer Cheng
-* Anshuman Girdhar
-
-##Other Contributers
-* Parth Kothari
-* Elliot Young
-
-##Mentors
-* Professor Joseph Lyding
-* Professor Lawrence Angrave
 
 ##License
 ```

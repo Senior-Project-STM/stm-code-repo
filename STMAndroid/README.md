@@ -1,25 +1,10 @@
-Senior Project STM
-===================
-This is the repo for our Scanning Tunneling Microscope project. The project was for CS492-493 Senior Project, at the University of Illinois at Urbana-Champaign.
-There are 4 seperate sections:
-* An Android App
-* A Bluetooth Server on the Raspberry Pi
-* A Web Server on the Raspberry Pi
-* Arduino code
+STMAndroid
+==========
+This is the Android portion of the code. You can run it by importing it into Android Studio. It is used in conjunction with the Raspberry Pi Bluetooth Server to initiate and stop scans, and send the scan data over Bluetooth.
 
-##Main Contributors
-* Atul Nambudiri
-* Jiayi Cao
-* Jennifer Cheng
-* Anshuman Girdhar
-
-##Other Contributers
-* Parth Kothari
-* Elliot Young
-
-##Mentors
-* Professor Joseph Lyding
-* Professor Lawrence Angrave
+##External Libraries Used:
+* [subsampling-scale-image-view](https://github.com/davemorrissey/subsampling-scale-image-view) by Dave Morrissey
+* [recyclerview-multiselect](https://github.com/bignerdranch/recyclerview-multiselect) by BigNerdRanch
 
 ##License
 ```

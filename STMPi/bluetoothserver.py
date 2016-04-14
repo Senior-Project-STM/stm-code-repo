@@ -3,7 +3,6 @@ import time
 import random
 import threading
 import serial
-import select
 import numpy as np
 import matplotlib
 matplotlib.use('SVG')
@@ -45,7 +44,7 @@ sending = False
 def scan():
 	"""
 	This function will look in the test_csv file, and find a random size x size chunk to display.
-	It will then send this image out line by line, which will simulate the microscope
+	It will then send this image out line by line, which will simulate the microscope scanning the surface of the sample line by line
 	"""
 	global t
 	global sending

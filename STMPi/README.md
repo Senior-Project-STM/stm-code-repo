@@ -1,25 +1,12 @@
-Senior Project STM
-===================
-This is the repo for our Scanning Tunneling Microscope project. The project was for CS492-493 Senior Project, at the University of Illinois at Urbana-Champaign.
-There are 4 seperate sections:
-* An Android App
-* A Bluetooth Server on the Raspberry Pi
-* A Web Server on the Raspberry Pi
-* Arduino code
+STMPi
+==========
+This is the Python 2.7 portion of the code, a Bluetooth Server that is run on the Raspberry Pi. You can run it by running bluetoothserver.py. It is used in conjunction with the Android App to initiate and stop scans, and send the scan data over Bluetooth. It will also eventually control the Arduinos and do actual scans, but for now, it is a demonstration app to show how communication between an Android Phone and the microscope will work
 
-##Main Contributors
-* Atul Nambudiri
-* Jiayi Cao
-* Jennifer Cheng
-* Anshuman Girdhar
-
-##Other Contributers
-* Parth Kothari
-* Elliot Young
-
-##Mentors
-* Professor Joseph Lyding
-* Professor Lawrence Angrave
+##External Required Libraries:
+* pybluez
+* serial
+* numpy
+* matplotlib
 
 ##License
 ```
