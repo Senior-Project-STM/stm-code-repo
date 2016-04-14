@@ -34,9 +34,8 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
     View myView;
     RecyclerView myRecyclerView;
 
-
     private MultiSelector mSelector = new MultiSelector();      //Allows you to select multiple entries, and delete them
-    private ModalMultiSelectorCallback deleteMode = new ModalMultiSelectorCallback(mSelector) {
+    private ModalMultiSelectorCallback deleteMode = new ModalMultiSelectorCallback(mSelector) {     //The callback that is called when you long click and turn n multi select mode
 
         @Override
         public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
@@ -47,35 +46,43 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
 
         @Override
         public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
-            if (menuItem.getItemId()==  R.id.menu_item_delete_scan){
-                // Need to finish the action mode before doing the following,
+            if (menuItem.getItemId()==  R.id.menu_item_delete_scan){        //When you click on the delete button, this callback is called
+                // Need to finish the action mode before doing the following
                 // not after. No idea why, but it crashes.
                 actionMode.finish();
                 Cursor cursor = adapter.getCursor();
-                for (int i = 0; i < adapter.getItemCount(); i++) {
+                for (int i = 0; i < adapter.getItemCount(); i++) {          //Loops through the cursor, and deletes all entries that have been pressed
                     if (mSelector.isSelected(i, 0)) {
                         adapter.getItem(i);
                         Long timeDb = Long.parseLong(cursor.getString(1));
                         Log.v("Time", Long.toString(timeDb));
-                        deleteScan(timeDb);
-                        deleteImage(cursor.getString(2));
+                        deleteScan(timeDb);             //Deletes the scan from the database
+                        deleteImage(cursor.getString(2));          //Deletes the image from the database
                         adapter.notifyItemRemoved(i);
                     }
                 }
                 adapter.changeCursor(getCursor("")); //Rerun the database query so that any deleted items are removed
-                mSelector.clearSelections();
+                mSelector.clearSelections();          //Clear out the multiselect
                 return true;
             }
             return false;
         }
     };
 
+    /**
+     * Deletes the scan with the given timestamp from the database
+     * @param timestamp THe timestamp of the scan
+     */
     public void deleteScan(Long timestamp) {
         String selection = ScanResultContract.FeedEntry.TIME + "=?";
         String[] args = {Long.toString(timestamp)};
         writeDB.delete(ScanResultContract.FeedEntry.TABLE_NAME, selection, args);
     }
 
+    /**
+     * Deletes and image from storage
+     * @param filepath      The filepath of the image
+     */
     public void deleteImage(String filepath) {
         File file = new File(filepath);
         file.delete();
@@ -96,11 +103,16 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
         inflater.inflate(R.menu.menu_saved_list, menu);
 
         final MenuItem item = menu.findItem(R.id.action_search);
-        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(item);
-        searchView.setOnQueryTextListener(this);
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(item);  //This sets up the searchview
+        searchView.setOnQueryTextListener(this);    //This registers the onQueryTextListener to be the callback for the searchview
 
     }
 
+    /**
+     * The callback that is called when the search text changes
+     * @param newText   The search query
+     * @return
+     */
     @Override
     public boolean onQueryTextChange(String newText) {
         adapter.changeCursor(getCursor(newText));
@@ -119,8 +131,8 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
         ((MainActivity) getActivity()).setTitle("Saved Scans");
         myView = inflater.inflate(R.layout.fragment_saved, container, false);
         Cursor cursor = getCursor("");
-        adapter = new SavedListAdapter(getActivity(), cursor, mSelector, deleteMode);
-        adapter.setOnItemClickListener(new SavedListAdapter.OnItemClickListener() {
+        adapter = new SavedListAdapter(getActivity(), cursor, mSelector, deleteMode);   //Set the Saved list adapter to be the adapter for the text view
+        adapter.setOnItemClickListener(new SavedListAdapter.OnItemClickListener() {  //Opens up the DetailedSavedScanFragment on click
             @Override
             public void onItemClick(String name, String time, String filePath, String extraNotes) {
                 ((MainActivity) getActivity()).openDetailedSavedScanFragment(name, time, filePath, extraNotes);
@@ -137,7 +149,8 @@ public class SavedListFragment extends Fragment implements SearchView.OnQueryTex
     }
 
     /**
-     * Creates a cursor which accesses the saved scans from the database. Will also use the constraint if needed
+     * Creates a cursor which accesses the saved scans from the database.
+     * Will also use the constraint if needed, which will search for items with names like the constraint
      * @return
      */
     public Cursor getCursor(String constraint) {

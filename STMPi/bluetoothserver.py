@@ -51,7 +51,7 @@ def scan():
 	global sending
 	global socket
 	v_array = np.zeros((1,1))			# Intermediary array with the results of the scan of one line 
-	size = 20 		#The size of the original scan to take
+	size = 6		#The size of the original scan to take
 
 	#These lines initalize the figure
 	fig = plt.figure()

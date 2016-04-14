@@ -29,14 +29,21 @@ import java.util.Date;
 public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.ViewHolder> {
     private Cursor cursor;
     OnItemClickListener itemClickListener;
-    MultiSelector mSelector;
+    MultiSelector mSelector;        //A multi click selector for the saved scan list
     ModalMultiSelectorCallback deleteMode;
     Activity act;
 
+    /**
+     * An Interface for the OnItemClickListener
+     */
     public interface OnItemClickListener {
         void onItemClick(String name, String time, String filePath, String extraNotes);
     }
 
+    /**
+     * Set the onItemClickListener to be the passed in one
+     * @param itemClickListener
+     */
     public void setOnItemClickListener(OnItemClickListener itemClickListener) {
         this.itemClickListener = itemClickListener;
     }
@@ -57,13 +64,17 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
             myCardView = v;
         }
 
+        /**
+         * An this method will call the short and long click listeners based upon which one is clicked
+         * @param v The view that has been clicked
+         */
         @Override
         public void onClick(View v) {
             if (!mSelector.tapSelection(this)) {        //If it wasn't clicked with the multiselector open
                 String text = ((TextView) (v.findViewById(R.id.name))).getText().toString();
                 Snackbar.make(v, "Clicked on " + text, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                if (itemClickListener != null) {
+                if (itemClickListener != null) {        //Get the info from the view holder and opens up the Detailed Fragment on a short click
                     getItem(this.getPosition());
                     String nameDb = cursor.getString(0);
                     Long timeDb = Long.parseLong(cursor.getString(1));
@@ -75,7 +86,7 @@ public class SavedListAdapter extends RecyclerView.Adapter<SavedListAdapter.View
         }
 
         @Override
-        public boolean onLongClick(View v) {
+        public boolean onLongClick(View v) {        //Executes the long click method and start multiclick mode
             ((AppCompatActivity) act).startSupportActionMode(deleteMode);
             mSelector.setSelected(this, true);
             return true;

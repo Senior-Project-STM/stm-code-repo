@@ -52,6 +52,13 @@ public class DetailedSavedScanFragment  extends Fragment {
 //        setRetainInstance(true);
     }
 
+    /**
+     * Sets up the initial view
+     * @param inflater  The layout inflator
+     * @param container     The Viewgroup container
+     * @param savedInstanceState    The savedInstanceState
+     * @return  The view
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -74,7 +81,7 @@ public class DetailedSavedScanFragment  extends Fragment {
             }
         });
 
-        updateButton.setOnClickListener(new View.OnClickListener() {
+        updateButton.setOnClickListener(new View.OnClickListener() {    //Update the corresponding row in the database when the update button ic clicked
             @Override
             public void onClick(View v) {
                 updateDb(nameView.getText().toString(), extraNotes.getText().toString());
@@ -89,54 +96,6 @@ public class DetailedSavedScanFragment  extends Fragment {
         return myView;
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // Inflate menu resource file.
-        inflater.inflate(R.menu.menu_detail_saved, menu);
-
-        // Locate MenuItem with ShareActionProvider
-        MenuItem item = menu.findItem(R.id.menu_item_share);
-//
-//        // Fetch and store ShareActionProvider
-//        mShareActionProvider = (ShareActionProvider) new ShareActionProvider(getActivity());
-//        MenuItemCompat.setActionProvider(item, mShareActionProvider);
-
-
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if(id == R.id.menu_item_share) {
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);            //Sets up the share intent so that you can share the image
-            shareIntent.setType("image/");
-            Log.e("File path", filepath);
-            Log.e("File path", filepath);
-            Log.e("File path", filepath);
-            Log.e("File path", filepath);
-            Uri uri = Uri.fromFile(new File(filepath));
-            shareIntent.putExtra(Intent.EXTRA_STREAM, uri.toString());
-            startActivity(Intent.createChooser(shareIntent, "Share image using"));
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    // Call to update the share intent
-    private void setShareIntent(Intent shareIntent) {
-        if (mShareActionProvider != null) {
-            Log.d("Share", "Not Null");
-            mShareActionProvider.setShareIntent(shareIntent);
-        }
-        else{
-            Log.d("Share", "Null");
-        }
-    }
 
     /**
      * Opens up the requested image from the file directory, and returns it

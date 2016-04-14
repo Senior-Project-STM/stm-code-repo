@@ -51,6 +51,11 @@ public class ImageDialogFragment extends DialogFragment {
         return frag;
     }
 
+    /**
+     * Called when the dialog is Created
+     * @param savedInstanceState
+     * @return
+     */
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Dialog dialog = super.onCreateDialog(savedInstanceState);
@@ -59,26 +64,37 @@ public class ImageDialogFragment extends DialogFragment {
         return dialog;
     }
 
+    /**
+     * Called automatically when the image dialog is started
+     */
     @Override
     public void onStart() {
         super.onStart();
 
         Dialog dialog = getDialog();
         if (dialog != null) {
-            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);  //Set dialog to match the size of the parent
         }
     }
 
+    /**
+     * Opens up a dialog fragment with a SubsamplingScaleImageView - https://github.com/davemorrissey/subsampling-scale-image-view
+     * Essentially a dialog with an image view that you can zoom in and out on
+     * @param inflater      The layout infaltor for the dialog
+     * @param container     The ViewGroup for the dialog
+     * @param savedInstanceState    The previosu state
+     * @return          The view that is created
+     */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        path = getArguments().getString("Image_Path");
+        path = getArguments().getString("Image_Path");      //Get the passed in image path variable
         SubsamplingScaleImageView imageView = new SubsamplingScaleImageView(getActivity());
         if(!path.equals("")) {
-            imageView.setImage(ImageSource.uri(path));
+            imageView.setImage(ImageSource.uri(path));      //Set the view to be the image at the path
             imageView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         } else {
-            Bitmap bm = (Bitmap) getArguments().getParcelable("BM");
+            Bitmap bm = (Bitmap) getArguments().getParcelable("BM");    //If a bitmap with passed in instead, set that to be the view
             imageView.setImage(ImageSource.bitmap(bm));
         }
         return imageView;

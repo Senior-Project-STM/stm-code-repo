@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Calls the startScan method in the Fragment
+     * Calls the startScan method in the MainFragment
      * @param v
      */
     public void startScan(View v) {
@@ -63,18 +63,29 @@ public class MainActivity extends AppCompatActivity {
         mainFrag.reset();
     }
 
+    /**
+     * Calls the disconnect method in the MainFragment
+     * @param v
+     */
     public void disconnect(View v) {
         mainFrag.disconnect();
     }
 
     /**
-     * Calls the save method in the Fragment
+     * Calls the save method in the MainFragment
      * @param v
      */
     public void save(View v) {
         mainFrag.save();
     }
 
+    /**
+     * Opens up a detailedScanFragment using the passed in parameters
+     * @param name  The name
+     * @param date The date
+     * @param filePath The file path
+     * @param extraNotes Any extra notes
+     */
     public void openDetailedSavedScanFragment(String name, String date, String filePath, String extraNotes) {
         detailFrag = new DetailedSavedScanFragment();
         Bundle args = new Bundle();

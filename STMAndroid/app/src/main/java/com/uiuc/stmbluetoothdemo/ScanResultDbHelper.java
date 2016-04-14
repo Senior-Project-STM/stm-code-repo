@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 /**
- * Created by chrx on 4/4/16.
+ * Created by chrx on 4/4/16./
  */
 public class ScanResultDbHelper extends SQLiteOpenHelper {
 
@@ -15,22 +15,22 @@ public class ScanResultDbHelper extends SQLiteOpenHelper {
 
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
-    private static final String SQL_CREATE_ENTRIES =
+    private static final String SQL_CREATE_ENTRIES =        //The query to create the table
             "CREATE TABLE " + ScanResultContract.FeedEntry.TABLE_NAME + "(" +
                     ScanResultContract.FeedEntry.TIME + " INTEGER PRIMARY KEY," +
                     ScanResultContract.FeedEntry.SCAN_NAME + TEXT_TYPE + COMMA_SEP +
                     ScanResultContract.FeedEntry.FILE_PATH + TEXT_TYPE + COMMA_SEP +
                     ScanResultContract.FeedEntry.EXTRA_NOTES + TEXT_TYPE + ");";
 
-    private static final String SQL_DELETE_ENTRIES =
+    private static final String SQL_DELETE_ENTRIES =        //The query to drop the table
             "DROP TABLE IF EXISTS " + ScanResultContract.FeedEntry.TABLE_NAME;
 
-    public ScanResultDbHelper(Context context) {
+    public ScanResultDbHelper(Context context) {               //THe helper that can access readlable and writeable databases
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(SQL_CREATE_ENTRIES);
+        db.execSQL(SQL_CREATE_ENTRIES); //Create the table onCreate
     }
 
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {

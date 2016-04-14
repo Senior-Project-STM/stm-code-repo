@@ -4,6 +4,7 @@ import android.provider.BaseColumns;
 
 /**
  * Created by chrx on 4/4/16.
+ * This class represents the database schema for the scan result database
  */
 public class ScanResultContract {
 
