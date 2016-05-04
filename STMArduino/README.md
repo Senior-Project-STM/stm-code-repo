@@ -1,6 +1,8 @@
 STMArduino
 ==========
-This is our Arduino code. It is merely a demo right now to show communication between the Raspberry Pi and Arduino. It will eventually control the DACs and ADC and do actual scans.
+We were planning on using the Arduino to control the various DACS, and ADCS required to operate the microscope. We decided to the the Arduino as it was fairly cheap, yet still had the hardware controls that we needed. As we were not able to finish the hardware, we could not finish the code for this section.
+
+Right now, it is merely a demo to show communication between the Raspberry Pi and Arduino. 
 
 
 ##License

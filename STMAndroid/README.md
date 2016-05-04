@@ -1,6 +1,10 @@
 STMAndroid
 ==========
-This is the Android portion of the code. You can run it by importing it into Android Studio. It is used in conjunction with the Raspberry Pi Bluetooth Server to initiate and stop scans, and send the scan data over Bluetooth.
+One of the requirements for this project was an Android App. The Android app was designed to start, control, and stop scans on the STM. As we were not able to fully complete the hardware, the microscope does not fully work. The Android App is able to control the microscope demo that we have working. 
+
+In order to use the app, you must have the Bluetooth Server running, with Bluetooth enabled on the computer you are running it on. The app allows you to connect to this microscope, and then start and stop scans. It also allows you to save the results of these scans.
+
+You can run it by importing it into Android Studio, and then uploading it to your device.
 
 ##External Libraries Used:
 * [subsampling-scale-image-view](https://github.com/davemorrissey/subsampling-scale-image-view) by Dave Morrissey
