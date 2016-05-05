@@ -15,6 +15,8 @@ In order to use the app, you must have the Bluetooth Server running, with Blueto
 
 You can run it by importing the project into Android Studio, and then uploading it to your device.
 
+[Here](https://www.youtube.com/watch?v=tKDuY3glu70) is a link to a video demonstrating how the app works.
+
 ##External Libraries Used:
 * [subsampling-scale-image-view](https://github.com/davemorrissey/subsampling-scale-image-view) by Dave Morrissey
 * [recyclerview-multiselect](https://github.com/bignerdranch/recyclerview-multiselect) by BigNerdRanch
