@@ -50,6 +50,14 @@ We were planning on using the Arduino to control the various DACS, and ADCS requ
 
 Right now, it is merely a demo to show communication between the Raspberry Pi and Arduino. 
 
+##Hardware
+==========
+In addition to this, our project has a hardware section, which is incomplete. We used various sources to start the build process, and have done what we can
+
+Sources:
+* [A previous attempt to build an STM](https://dberard.com/home-built-stm/)
+* [A wiring diagram we used](https://drive.google.com/open?id=0B5njquGxAWb6ZFVhVWRqVGlsZGNsdy1xVFJMUnVhaE5TQ1NZ)
+
 
 ##Main Contributors
 * Atul Nambudiri
