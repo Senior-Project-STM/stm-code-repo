@@ -43,6 +43,9 @@ You can run it by running bluetoothserver.py. Make sure that you have Python 2.7
 
 ##Raspberry Pi Web Server - [WebServer](https://github.com/Senior-Project-STM/stm-code-repo/tree/master/WebServer)
 =====================================
+This repo only consists the front end of the project. Backend code is hosted on Raspberry Pi.
+Please install Rasbian operating system on Raspberry Pi. Then make sure Python and Django are installed as well.
+For the demo purposes, you can use python's simple server to host the static files.
 
 ##Arduino Section - [STMArduino](https://github.com/Senior-Project-STM/stm-code-repo/tree/master/STMArduino)
 ==============================

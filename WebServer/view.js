@@ -9,23 +9,24 @@ var curX = 0;
 var curY = 0;
 
 
+//draw the image in the top div
 function drawImage(){
 		var ctx = $("#scanDisplay")[0].getContext('2d');
 
 		var img = new Image();
 		img.onload = function(){
 
-
-
-
+			//set the size of the div equal to the dimension of the image
 			$("#scanDisplay").attr("height",img.height);
   			$("#scanDisplay").attr("width",img.width);
-  			//$("#scanDisplay").attr("src","images/ex1.png");
+
   			var line = 0;
   			animation = setInterval(function(){
 
   					ctx.drawImage(img,0,line,img.width,1,0,line,img.width,img.height);
   					line ++;
+
+  					//change button text when finished
   					if(line >= img.height){ 
   						$("#startBtn").text("Start");
   						$("#startBtn").removeClass("btn-success");
@@ -37,19 +38,20 @@ function drawImage(){
   				},100);
   			
 
-  		
+  			//adjust positions
   			$("#scanDisplay").css("margin-left",($("#scanDisplay").parent().width() - img.width)/2);
 
 
 
 		}
-
+		//Get a random image for demo purpose
 		img.src = "images/"+Math.floor((Math.random() * 3) + 1)+".jpg";
 }
 
 function start(){
 	$("#startBtn").click(function(){
 
+		//Change the text on buttons once scanning starts
 		if($("#startBtn").text() == "Start"){
 			$("#startBtn").text("Update");
 			$("#startBtn").removeClass("btn-primary");
@@ -65,6 +67,7 @@ function start(){
 
 function drawMinimap(){
 
+	//draw selected area on minimap
 	var canvas = $("#minimap")[0];
 	var ctx = canvas.getContext('2d');
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -76,6 +79,8 @@ function drawMinimap(){
 	ctx.stroke();
 }
 function libraryTab(){
+
+	//library tab utilities
 	$("#main").append("<div id='libraryTab' class='mainFrame'><div class='title bg-primary' width=100%><h3>Saved Images</h3></div><div class='row'></div></div>");
 	var imgNumber = 3;
 	var folder = "images/"
@@ -85,6 +90,8 @@ function libraryTab(){
 }
 function scanTab(){
 	
+
+	//buttons and input boxes in scan page
 	$("#main").append("<div id='scanTab' class='mainFrame'><div id='topPanel'><canvas id='scanDisplay'></canvas></div><button id='startBtn' type='button' class='btn btn-primary stmBtn2'>Start</button><button id='stopBtn' type='button' class='btn btn-danger stmBtn2'>Stop</button></div>");
 	$("#scanTab").append("<div class='input-group stmBtn2'><span class='input-group-addon' id='basic-addon3'>Scan Length</span><input value='492.38' type='text' class='form-control textf' id='scanLength' aria-describedby='basic-addon'></div>");
 	$("#scanTab").append("<div class='input-group stmBtn2'><span class='input-group-addon' id='basic-addon3'>Scan Size</span><input value='400' type='text' class='form-control textf' id='scanSize' aria-describedby='basic-addon'></div>");
@@ -105,6 +112,7 @@ function scanTab(){
 	drawMinimap();
 	start();
 
+	//Change text on buttons after click stop
 	$("#stopBtn").click(function(){
 
   						$("#startBtn").text("Start");
@@ -115,6 +123,7 @@ function scanTab(){
   						clearInterval(animation);
 	})
 
+	//Four different arrow keys correspond to different areas on the minimap
 	$("#up").click(function(){
 
 		console.log("b");
@@ -123,20 +132,20 @@ function scanTab(){
 		drawMinimap();
 	})
 
-		$("#down").click(function(){
+	$("#down").click(function(){
 
 		curY = curY + 50;
 		if(curY > 100) curY = 100;
 		drawMinimap();
 	})
 
-			$("#left").click(function(){
+	$("#left").click(function(){
 
 		curX = curX - 50;
 		if(curX < 0) curX = 0;
 		drawMinimap();
 	})
-				$("#right").click(function(){
+	$("#right").click(function(){
 
 		curX = curX + 50;
 		if(curX > 100) curX = 100;
